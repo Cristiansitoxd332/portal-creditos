@@ -119,6 +119,17 @@ public class PagoService {
         return registrar(creditoId, solicitud, CanalPago.ADMIN, admin, username, ip);
     }
 
+    /**
+     * Registra un pago que viene de un archivo importado.
+     * NO abre transaccion propia: participa en la transaccion de la importacion. Asi, si una fila
+     * es invalida, se informa el error de esa fila sin cancelar el resto de la carga.
+     */
+    public Comprobante registrarDesdeImportacion(Long creditoId, java.math.BigDecimal valor, MedioPago medio,
+                                                 String observacion, Usuario admin) {
+        return registrar(creditoId, new PagoRequest(valor, medio, false, observacion),
+                CanalPago.IMPORTACION, admin, admin.getUsername(), null);
+    }
+
     @Transactional(readOnly = true)
     public List<PagoHistorial> historial(Long creditoId) {
         return pagos.findByCreditoIdOrderByFechaPagoDesc(creditoId).stream()

@@ -26,4 +26,9 @@ public class NegocioException extends RuntimeException {
     public static NegocioException solicitudInvalida(String mensaje) {
         return new NegocioException(HttpStatus.BAD_REQUEST, mensaje);
     }
+
+    /** La operacion no es posible en el estado actual (ej. paz y salvo de un credito con saldo). */
+    public static NegocioException conflicto(String mensaje) {
+        return new NegocioException(HttpStatus.CONFLICT, mensaje);
+    }
 }

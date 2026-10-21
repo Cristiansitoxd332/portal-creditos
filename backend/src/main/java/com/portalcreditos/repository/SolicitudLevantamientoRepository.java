@@ -14,4 +14,8 @@ public interface SolicitudLevantamientoRepository extends JpaRepository<Solicitu
     List<SolicitudLevantamiento> findByEstadoOrderByFechaSolicitudAsc(EstadoSolicitud estado);
 
     boolean existsByCreditoIdAndEstadoIn(Long creditoId, Collection<EstadoSolicitud> estados);
+
+    boolean existsByNumeroRadicado(String numeroRadicado);
+
+    long countByEstadoIn(Collection<EstadoSolicitud> estados);
 }

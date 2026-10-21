@@ -1,0 +1,7 @@
+﻿numero_credito;valor;medio_pago;observacion
+CV-2025-0001;2151127;CONSIGNACION;Cuota de octubre - consignacion en oficina
+CV-2026-0004;1286048;EFECTIVO;Primera cuota pagada en efectivo
+CV-2025-0002;1000000;TRANSFERENCIA;Abono parcial a la mora
+CV-2025-0003;500000;EFECTIVO;Credito ya cancelado (debe fallar)
+CV-9999-0001;100000;EFECTIVO;Credito inexistente (debe fallar)
+CV-2025-0006;300000;CHEQUE;Medio de pago invalido (debe fallar)

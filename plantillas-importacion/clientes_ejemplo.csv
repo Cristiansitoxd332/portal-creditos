@@ -1,0 +1,8 @@
+﻿tipo_documento;numero_documento;nombres;apellidos;correo;telefono;direccion;ciudad
+CC;1075300001;Camila Andrea;Torres Mendez;camila.torres@correo-ficticio.com;3000300001;Calle 5 # 10-20;Neiva
+CC;1075300002;Julian David;Perdomo Charry;julian.perdomo@correo-ficticio.com;3000300002;Carrera 8 # 3-14;Neiva
+CE;980300003;Valentina;Ospina Lara;valentina.ospina@correo-ficticio.com;3000300003;Avenida 26 # 12-40;Pitalito
+CC;1075300004;Mateo;Cabrera Rojas;;3000300004;;Garzon
+CC;1075200101;Documento;Repetido;repetido@correo-ficticio.com;3000300005;Calle 1;Neiva
+CC;1075300006;Correo;Invalido;correo-sin-arroba;3000300006;Calle 2;Neiva
+XX;1075300007;Tipo;Invalido;tipo@correo-ficticio.com;3000300007;Calle 3;Neiva

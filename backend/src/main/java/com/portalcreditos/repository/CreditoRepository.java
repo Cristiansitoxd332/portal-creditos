@@ -24,6 +24,10 @@ public interface CreditoRepository extends JpaRepository<Credito, Long> {
 
     long countByEstado(EstadoCredito estado);
 
+    long countByClienteId(Long clienteId);
+
+    boolean existsByNumeroCredito(String numeroCredito);
+
     /**
      * Obtiene el credito BLOQUEANDO su fila hasta que termine la transaccion (SELECT ... FOR UPDATE).
      * Evita que dos pagos simultaneos sobre el mismo credito se apliquen a la misma cuota.

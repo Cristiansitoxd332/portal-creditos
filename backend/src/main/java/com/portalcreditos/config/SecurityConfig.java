@@ -37,6 +37,7 @@ import java.util.List;
  * - API sin estado (stateless): no hay sesiones en el servidor; cada peticion trae su token JWT.
  * - El token se firma con HMAC-SHA256 usando un secreto que NO esta en el repositorio.
  * - Control de acceso por rol: /api/cliente/** solo CLIENTE, /api/admin/** solo ADMIN.
+ * - Rutas publicas: login, /api/publico/** (canales, requisitos, verificacion de paz y salvo) y Swagger.
  * - Contrasenas cifradas con BCrypt.
  */
 @Configuration
@@ -68,6 +69,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         .requestMatchers("/api/salud", "/api/publico/**", "/error").permitAll()
+                        // Documentacion de la API (Swagger UI)
+                        .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/api/admin/**", "/api/diagnostico/**").hasRole("ADMIN")
                         .requestMatchers("/api/cliente/**").hasRole("CLIENTE")
                         .anyRequest().authenticated())

@@ -23,6 +23,13 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 	// Seguridad: Spring Security + validacion de tokens JWT (incluye la libreria Nimbus JOSE)
 	implementation 'org.springframework.boot:spring-boot-starter-security-oauth2-resource-server'
+	// Documentacion interactiva de la API (Swagger UI)
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.1'
+	// Generacion de PDF (paz y salvo, comprobantes) y codigos QR
+	implementation 'com.github.librepdf:openpdf:2.0.3'
+	implementation 'com.google.zxing:core:3.5.3'
+	// Lectura y generacion de archivos Excel (importacion y plantillas)
+	implementation 'org.apache.poi:poi-ooxml:5.4.1'
 	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	runtimeOnly 'com.mysql:mysql-connector-j'
