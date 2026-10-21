@@ -1,0 +1,104 @@
+<section class="bienvenida">
+  <div>
+    <p>{{ saludo() }},</p>
+    <h1>{{ auth.primerNombre() }}</h1>
+  </div>
+  @if (creditos()) {
+    <div class="total">
+      <span>Saldo total de tus créditos</span>
+      <strong>{{ resumen().saldo | moneda }}</strong>
+      <small>{{ resumen().activos }} {{ resumen().activos === 1 ? 'crédito activo' : 'créditos activos' }}</small>
+    </div>
+  }
+</section>
+
+@if (error()) {
+  <div class="aviso aviso-mora" role="alert">{{ error() }}</div>
+}
+
+<div class="lista">
+  @if (creditos() === null && !error()) {
+    <app-cargando [cantidad]="2" [alto]="300" />
+  }
+
+  @for (c of creditos(); track c.id; let i = $index) {
+    <article class="tarjeta tarjeta-elevada credito aparecer" [style.animation-delay.ms]="i * 60">
+      <header class="cabecera">
+        <div class="identidad">
+          <span class="numero">Crédito {{ c.numeroCredito }}</span>
+          <h2>{{ c.vehiculo }} · {{ c.placa }}</h2>
+        </div>
+        <app-chip-semaforo [estado]="c.semaforo" />
+      </header>
+
+      <div class="cuerpo">
+        <app-anillo [porcentaje]="c.porcentajePagado" />
+        <dl class="cifras">
+          <div><dt>Saldo de capital</dt><dd class="valor-grande">{{ c.saldoCapital | moneda }}</dd></div>
+          <div><dt>Cuotas pagadas</dt><dd>{{ c.cuotasPagadas }} de {{ c.plazoMeses }}</dd></div>
+          <div><dt>Valor de la cuota</dt><dd>{{ c.valorCuota | moneda }}</dd></div>
+        </dl>
+      </div>
+
+      @switch (c.semaforo) {
+        @case ('EN_MORA') {
+          <div class="aviso aviso-mora alerta">
+            <app-icono nombre="alert" />
+            <div>
+              <strong>Tienes {{ c.cuotasVencidas }} {{ c.cuotasVencidas === 1 ? 'cuota vencida' : 'cuotas vencidas' }} · {{ c.diasMora }} días de mora</strong>
+              <span>Valor vencido: {{ c.valorVencido | moneda }}</span>
+            </div>
+          </div>
+        }
+        @case ('CANCELADO') {
+          <div class="aviso aviso-ok alerta">
+            <app-icono nombre="doc-check" />
+            <div><strong>¡Crédito pagado en su totalidad!</strong><span>Ya puedes descargar tu paz y salvo.</span></div>
+          </div>
+        }
+        @default {
+          @if (c.proximaCuota; as p) {
+            <div class="proxima" [class.urgente]="c.semaforo === 'PROXIMA_A_VENCER'">
+              <div>
+                <span class="etiqueta">Próxima cuota · {{ p.fechaVencimiento | fecha }}</span>
+                <strong class="valor-grande">{{ p.valor | moneda }}</strong>
+              </div>
+              <div class="dias" [attr.aria-label]="p.diasRestantes === 0 ? 'Vence hoy' : 'Faltan ' + p.diasRestantes + ' días'">
+                @if (p.diasRestantes === 0) { <strong>Hoy</strong> } @else {
+                  <strong>{{ p.diasRestantes }}</strong><small>{{ p.diasRestantes === 1 ? 'día' : 'días' }}</small>
+                }
+              </div>
+            </div>
+          }
+        }
+      }
+
+      <div class="acciones">
+        @if (c.estado !== 'CANCELADO') {
+          <a class="btn btn-primario btn-bloque" [routerLink]="['/cliente/creditos', c.id, 'pagar']">
+            <app-icono nombre="money" [tamano]="18" />{{ c.estado === 'EN_MORA' ? 'Ponerme al día' : 'Pagar cuota' }}
+          </a>
+        } @else {
+          <a class="btn btn-exito btn-bloque" [routerLink]="['/cliente/creditos', c.id, 'documentos']">
+            <app-icono nombre="download" [tamano]="18" />Paz y salvo y levantamiento
+          </a>
+        }
+        <nav class="atajos" aria-label="Opciones del crédito">
+          <a [routerLink]="['/cliente/creditos', c.id]"><span><app-icono nombre="calendar" /></span>Plan de pagos</a>
+          @if (c.estado !== 'CANCELADO') {
+            <a [routerLink]="['/cliente/creditos', c.id, 'simulador']"><span><app-icono nombre="calculator" /></span>Simulador</a>
+          }
+          <a [routerLink]="['/cliente/creditos', c.id, 'documentos']"><span><app-icono nombre="doc-check" /></span>Paz y salvo</a>
+          <a routerLink="/cliente/contacto"><span><app-icono nombre="chat" /></span>Contacto</a>
+        </nav>
+      </div>
+    </article>
+  } @empty {
+    @if (creditos() !== null) {
+      <div class="tarjeta vacio">
+        <app-icono nombre="card" [tamano]="32" />
+        <p>No tienes créditos registrados.</p>
+      </div>
+    }
+  }
+</div>

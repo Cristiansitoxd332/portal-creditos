@@ -1,0 +1,129 @@
+@if (detalle(); as d) {
+  <app-encabezado [titulo]="'Crédito ' + d.resumen.numeroCredito" [subtitulo]="d.resumen.vehiculo + ' · ' + d.resumen.placa" volver="/cliente" />
+
+  <section class="tarjeta resumen aparecer">
+    <app-anillo [porcentaje]="d.resumen.porcentajePagado" [tamano]="110" />
+    <dl class="cifras">
+      <div><dt>Estado</dt><dd><app-chip-semaforo [estado]="d.resumen.semaforo" /></dd></div>
+      <div><dt>Saldo de capital</dt><dd class="valor-grande">{{ d.resumen.saldoCapital | moneda }}</dd></div>
+      <div><dt>Cuota mensual</dt><dd>{{ d.resumen.valorCuota | moneda }}</dd></div>
+      <div><dt>Cuotas</dt><dd>{{ d.resumen.cuotasPagadas }} pagadas de {{ d.resumen.plazoMeses }}</dd></div>
+    </dl>
+    <div class="botones">
+      @if (d.resumen.estado !== 'CANCELADO') {
+        <a class="btn btn-primario" [routerLink]="['/cliente/creditos', d.resumen.id, 'pagar']"><app-icono nombre="money" [tamano]="18" />Pagar</a>
+        <a class="btn btn-secundario" [routerLink]="['/cliente/creditos', d.resumen.id, 'simulador']"><app-icono nombre="calculator" [tamano]="18" />Simular abono</a>
+      } @else {
+        <a class="btn btn-exito" [routerLink]="['/cliente/creditos', d.resumen.id, 'documentos']"><app-icono nombre="download" [tamano]="18" />Paz y salvo</a>
+      }
+    </div>
+  </section>
+
+  @if (d.resumen.estado === 'EN_MORA') {
+    <div class="aviso aviso-mora mora">
+      <app-icono nombre="alert" />
+      <span><strong>{{ d.resumen.cuotasVencidas }} cuotas vencidas</strong> por {{ d.resumen.valorVencido | moneda }} · {{ d.resumen.diasMora }} días de mora.</span>
+    </div>
+  }
+
+  <div class="pestanas" role="tablist" aria-label="Información del crédito">
+    <button role="tab" type="button" [attr.aria-selected]="pestana() === 'plan'" (click)="pestana.set('plan')">Plan de pagos</button>
+    <button role="tab" type="button" [attr.aria-selected]="pestana() === 'pagos'" (click)="pestana.set('pagos')">Pagos ({{ pagos().length }})</button>
+    <button role="tab" type="button" [attr.aria-selected]="pestana() === 'vehiculo'" (click)="pestana.set('vehiculo')">Vehículo</button>
+    <button role="tab" type="button" [attr.aria-selected]="pestana() === 'datos'" (click)="pestana.set('datos')">Condiciones</button>
+  </div>
+
+  <section class="tarjeta panel aparecer" role="tabpanel">
+    @switch (pestana()) {
+      @case ('plan') {
+        <div class="filtros" role="group" aria-label="Filtrar cuotas">
+          @for (f of filtros; track f.valor) {
+            <button type="button" class="filtro" [class.activo]="filtro() === f.valor" [attr.aria-pressed]="filtro() === f.valor" (click)="filtro.set(f.valor)">{{ f.texto }}</button>
+          }
+        </div>
+        <ul class="cuotas">
+          @for (q of cuotas(); track q.numeroCuota) {
+            <li class="cuota" [class.vencida]="q.estado === 'VENCIDA'">
+              <span class="n">N.º {{ q.numeroCuota }}</span>
+              <div class="info">
+                <strong>{{ q.valorCuota | moneda }}</strong>
+                @if (q.estado === 'VENCIDA') {
+                  <span class="mora-texto">Venció {{ q.fechaVencimiento | fecha }} · {{ q.diasMora }} días de mora</span>
+                } @else if (q.estado === 'PAGADA') {
+                  <span>Vence {{ q.fechaVencimiento | fecha }} · pagada {{ q.fechaPago | fecha }}</span>
+                } @else if (q.estado === 'PARCIAL') {
+                  <span>Vence {{ q.fechaVencimiento | fecha }} · abonado {{ q.valorPagado | moneda }}</span>
+                } @else {
+                  <span>Vence {{ q.fechaVencimiento | fecha }}</span>
+                }
+                <small>Capital {{ q.valorCapital | moneda }} · Interés {{ q.valorInteres | moneda }}</small>
+              </div>
+              <app-chip-cuota [estado]="q.estado" />
+            </li>
+          } @empty {
+            <li class="vacio">No hay cuotas con este filtro.</li>
+          }
+        </ul>
+      }
+      @case ('pagos') {
+        <ul class="pagos">
+          @for (p of pagos(); track p.pagoId) {
+            <li>
+              <div class="info">
+                <strong>{{ p.valor | moneda }}</strong>
+                <span>{{ p.fecha | fecha: 'hora' }} · {{ textoMedio[p.medioPago] }}</span>
+                <small>Ref. {{ p.referencia }}{{ p.cuotasAplicadas ? ' · cuotas ' + p.cuotasAplicadas : '' }}</small>
+              </div>
+              @if (p.estado === 'APROBADO') {
+                <button type="button" class="btn btn-secundario btn-pequeno" (click)="descargarComprobante(p)" [attr.aria-label]="'Descargar comprobante ' + p.referencia">
+                  <app-icono nombre="download" [tamano]="16" />PDF
+                </button>
+              } @else {
+                <span class="chip chip-mora">Rechazado</span>
+              }
+            </li>
+          } @empty {
+            <li class="vacio">Aún no hay pagos registrados.</li>
+          }
+        </ul>
+      }
+      @case ('vehiculo') {
+        <div class="vehiculo">
+          <span class="icono-auto"><app-icono nombre="car" [tamano]="34" /></span>
+          <dl class="datos">
+            <div><dt>Placa</dt><dd>{{ d.vehiculo.placa }}</dd></div>
+            <div><dt>Marca</dt><dd>{{ d.vehiculo.marca }}</dd></div>
+            <div><dt>Línea</dt><dd>{{ d.vehiculo.linea }}</dd></div>
+            <div><dt>Modelo</dt><dd>{{ d.vehiculo.modelo }}</dd></div>
+            <div><dt>Color</dt><dd>{{ d.vehiculo.color ?? '—' }}</dd></div>
+            <div><dt>Clase</dt><dd>{{ d.vehiculo.clase }}</dd></div>
+            <div><dt>N.º de motor</dt><dd>{{ d.vehiculo.numeroMotor ?? '—' }}</dd></div>
+            <div><dt>N.º de chasis</dt><dd>{{ d.vehiculo.numeroChasis ?? '—' }}</dd></div>
+            <div><dt>Prenda</dt><dd>{{ d.resumen.estadoPrenda === 'LEVANTADA' ? 'Levantada' : d.resumen.estadoPrenda === 'EN_TRAMITE' ? 'Levantamiento en trámite' : 'Vigente' }}</dd></div>
+          </dl>
+        </div>
+      }
+      @case ('datos') {
+        <dl class="datos">
+          <div><dt>Valor del vehículo</dt><dd>{{ d.valorVehiculo | moneda }}</dd></div>
+          <div><dt>Cuota inicial</dt><dd>{{ d.cuotaInicial | moneda }}</dd></div>
+          <div><dt>Valor financiado</dt><dd>{{ d.resumen.valorFinanciado | moneda }}</dd></div>
+          <div><dt>Tasa mensual</dt><dd>{{ d.resumen.tasaInteresMensual | numero }} %</dd></div>
+          <div><dt>Plazo</dt><dd>{{ d.resumen.plazoMeses }} meses</dd></div>
+          <div><dt>Desembolso</dt><dd>{{ d.fechaDesembolso | fecha }}</dd></div>
+          <div><dt>Primera cuota</dt><dd>{{ d.fechaPrimeraCuota | fecha }}</dd></div>
+          <div><dt>Total pagado</dt><dd>{{ d.totalPagado | moneda }}</dd></div>
+          <div><dt>Capital pagado</dt><dd>{{ d.capitalPagado | moneda }}</dd></div>
+          <div><dt>Intereses pagados</dt><dd>{{ d.interesesPagados | moneda }}</dd></div>
+          <div><dt>Intereses del plan</dt><dd>{{ d.totalInteresesPlan | moneda }}</dd></div>
+          <div><dt>Total del plan</dt><dd>{{ d.totalPagarPlan | moneda }}</dd></div>
+        </dl>
+      }
+    }
+  </section>
+} @else if (error()) {
+  <app-encabezado titulo="Crédito" volver="/cliente" />
+  <div class="aviso aviso-mora" role="alert">{{ error() }}</div>
+} @else {
+  <app-cargando [cantidad]="3" [alto]="140" />
+}

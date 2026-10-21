@@ -1,0 +1,101 @@
+@if (comprobante(); as c) {
+  <!-- ===================== Paso 2: comprobante ===================== -->
+  <section class="tarjeta tarjeta-elevada comprobante aparecer">
+    <span class="sello" [class.rechazado]="c.estado !== 'APROBADO'">
+      <app-icono [nombre]="c.estado === 'APROBADO' ? 'check' : 'x'" [tamano]="34" [grosor]="3" />
+    </span>
+    <h1>{{ c.estado === 'APROBADO' ? '¡Pago aprobado!' : 'Pago rechazado' }}</h1>
+    <p class="monto">{{ c.valor | moneda }}</p>
+    <p class="texto-suave mensaje">{{ c.mensaje }}</p>
+
+    <dl class="datos">
+      <div><dt>Referencia</dt><dd>{{ c.referencia }}</dd></div>
+      @if (c.codigoAutorizacion) { <div><dt>Autorización</dt><dd>{{ c.codigoAutorizacion }}</dd></div> }
+      <div><dt>Fecha</dt><dd>{{ c.fecha | fecha: 'hora' }}</dd></div>
+      <div><dt>Medio</dt><dd>{{ textoMedio[c.medioPago] }}</dd></div>
+      <div><dt>Crédito</dt><dd>{{ c.numeroCredito }}</dd></div>
+      @if (c.saldoCapitalNuevo !== null && c.estado === 'APROBADO') {
+        <div><dt>Nuevo saldo de capital</dt><dd>{{ c.saldoCapitalNuevo | moneda }}</dd></div>
+      }
+    </dl>
+
+    @if (c.aplicaciones.length) {
+      <div class="aplicaciones">
+        <span class="titulo-seccion">Aplicado a</span>
+        @for (a of c.aplicaciones; track a.numeroCuota) {
+          <div class="fila"><span>Cuota N.º {{ a.numeroCuota }}</span><strong>{{ a.valorAplicado | moneda }}</strong><app-chip-cuota [estado]="a.estadoCuota" /></div>
+        }
+      </div>
+    }
+
+    <div class="aviso"><app-icono nombre="shield" [tamano]="18" /><span>{{ c.aviso }}</span></div>
+
+    <div class="botones">
+      @if (c.estado === 'APROBADO') {
+        <button type="button" class="btn btn-primario" (click)="descargar()"><app-icono nombre="download" [tamano]="18" />Descargar comprobante</button>
+      } @else {
+        <button type="button" class="btn btn-primario" (click)="otroPago()"><app-icono nombre="refresh" [tamano]="18" />Intentar de nuevo</button>
+      }
+      <a class="btn btn-secundario" routerLink="/cliente">Volver al inicio</a>
+    </div>
+  </section>
+} @else if (opciones(); as o) {
+  <!-- ===================== Paso 1: valor y medio ===================== -->
+  <app-encabezado titulo="Pagar" [subtitulo]="'Crédito ' + o.numeroCredito" [volver]="'/cliente/creditos/' + id()" />
+
+  <div class="pasos">
+    <section class="tarjeta">
+      <h2>1. ¿Cuánto quieres pagar?</h2>
+      <div class="opciones" role="radiogroup" aria-label="Valor a pagar">
+        @if (o.valorVencido > 0) {
+          <button type="button" role="radio" class="opcion" [class.activa]="opcion() === 'vencido'" [attr.aria-checked]="opcion() === 'vencido'" (click)="opcion.set('vencido')">
+            <span><strong>Ponerme al día</strong><small>{{ o.cuotasVencidas }} {{ o.cuotasVencidas === 1 ? 'cuota vencida' : 'cuotas vencidas' }}</small></span>
+            <b>{{ o.valorVencido | moneda }}</b>
+          </button>
+        }
+        <button type="button" role="radio" class="opcion" [class.activa]="opcion() === 'proxima'" [attr.aria-checked]="opcion() === 'proxima'" (click)="opcion.set('proxima')">
+          <span><strong>{{ o.valorVencido > 0 ? 'Lo vencido + próxima cuota' : 'Próxima cuota' }}</strong><small>Quedas al día por un mes más</small></span>
+          <b>{{ o.valorHastaProximaCuota | moneda }}</b>
+        </button>
+        <button type="button" role="radio" class="opcion" [class.activa]="opcion() === 'total'" [attr.aria-checked]="opcion() === 'total'" (click)="opcion.set('total')">
+          <span><strong>Pagar todas las cuotas</strong><small>Total pendiente del plan</small></span>
+          <b>{{ o.valorMaximo | moneda }}</b>
+        </button>
+        <label class="opcion otro" [class.activa]="opcion() === 'otro'">
+          <span><strong>Otro valor</strong><small>Mínimo {{ o.valorMinimo | moneda }}</small></span>
+          <input inputmode="numeric" placeholder="$ 0" aria-label="Otro valor" [value]="otroValor() ?? ''" (input)="cambiarOtro($any($event.target).value)" (focus)="opcion.set('otro')">
+        </label>
+        @if (errorValor()) { <span class="error-valor" role="alert">{{ errorValor() }}</span> }
+      </div>
+    </section>
+
+    <section class="tarjeta">
+      <h2>2. Medio de pago</h2>
+      <div class="medios" role="radiogroup" aria-label="Medio de pago">
+        @for (m of o.mediosDisponibles; track m) {
+          <button type="button" role="radio" class="medio" [class.activa]="medio() === m" [attr.aria-checked]="medio() === m" (click)="medio.set(m)">
+            <app-icono [nombre]="m === 'PSE_SIMULADO' ? 'globe' : 'card'" [tamano]="22" />
+            <span>{{ textoMedio[m] }}</span>
+          </button>
+        }
+      </div>
+      <label class="demo">
+        <input type="checkbox" [checked]="simularRechazo()" (change)="simularRechazo.set($any($event.target).checked)">
+        <span>Simular un rechazo del banco (solo para demostración)</span>
+      </label>
+    </section>
+
+    <section class="tarjeta tarjeta-elevada confirmar">
+      <div class="total"><span>Total a pagar</span><strong>{{ valor() | moneda }}</strong></div>
+      <button type="button" class="btn btn-primario btn-bloque" [disabled]="!puedePagar()" (click)="pagar()">
+        @if (procesando()) { Procesando pago… } @else { <app-icono nombre="lock" [tamano]="18" />Pagar {{ valor() | moneda }} }
+      </button>
+      <p class="aviso"><app-icono nombre="shield" [tamano]="18" /><span>{{ o.aviso }}</span></p>
+    </section>
+  </div>
+} @else if (error()) {
+  <app-encabezado titulo="Pagar" [volver]="'/cliente/creditos/' + id()" />
+  <div class="aviso aviso-mora" role="alert">{{ error() }}</div>
+} @else {
+  <app-cargando [cantidad]="3" [alto]="120" />
+}
