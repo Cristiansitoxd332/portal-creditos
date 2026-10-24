@@ -68,7 +68,7 @@ const COLOR_SEMAFORO: Record<Semaforo, string> = {
               <div class="col">
                 <span class="valor">{{ abreviar(m.total) }}</span>
                 <div class="pista"><div class="relleno" [style.height.%]="altura(m.total)"></div></div>
-                <span class="mes">{{ m.mes }}</span>
+                <span class="mes">{{ nombreMes(m.mes) }}</span>
               </div>
             }
           </div>
@@ -159,6 +159,13 @@ export class TableroPage {
 
   protected altura(v: number): number {
     return (v / this.maximo()) * 100;
+  }
+
+  /** Convierte "2026-05" en "may 2026". */
+  protected nombreMes(mes: string): string {
+    const [a, m] = mes.split('-').map(Number);
+    if (!a || !m) return mes;
+    return new Date(a, m - 1, 1).toLocaleDateString('es-CO', { month: 'short', year: 'numeric' }).replace('.', '').replace(' de ', ' ');
   }
 
   protected abreviar(v: number): string {
