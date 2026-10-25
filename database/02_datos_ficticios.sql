@@ -56,18 +56,18 @@ INSERT INTO cliente (id, tipo_documento, numero_documento, nombres, apellidos, c
 -- USUARIOS (contrasenas cifradas con BCrypt)
 -- ---------------------------------------------------------------------
 INSERT INTO usuario (id, username, password_hash, rol, cliente_id, activo, debe_cambiar_password) VALUES
-(1, 'admin', '$2a$10$NhaUVIPPN716G9FDh1IYl.LAowVIhIr/3TRqmfG9TlRpbL0lUOile', 'ADMIN', NULL, TRUE, FALSE),
-(2, '1075200101', '$2a$10$8gJM3eIF44r0OuIaC0OPoOz5yqLjQ7Gpgir/bxGQ4uyUHnDulVmXO', 'CLIENTE', 1, TRUE, FALSE),
-(3, '1075200202', '$2a$10$07A3Qz/4hdQLBlnAtGfu/egxQxVrQWtMZEVgVV/V.d3IP.mmyZGc6', 'CLIENTE', 2, TRUE, FALSE),
-(4, '1075200303', '$2a$10$I4DsdTz8aO3AMu7ytpUxc.IRiU9F8tXK2vAobqBHYsHO/gHKU5Xlu', 'CLIENTE', 3, TRUE, FALSE),
-(5, '980045600', '$2a$10$9CG2FxQ8ZOWIcnxAI0oZBeeCzWbTGKiKgHOGsfInOmOGtghahSWA6', 'CLIENTE', 4, TRUE, TRUE),
-(6, '1075200505', '$2a$10$gsSVb0NGhOM8smalMcJ7iu696BZ50gDbpkYgiGlyBC//0ngqDl5VK', 'CLIENTE', 5, TRUE, FALSE);
+(1, 'admin', '$2a$10$onMtNpskzdvtFw00nSgrUuwkjn.BT19dNv5tnjNePmmNKQcB5kSKa', 'ADMIN', NULL, TRUE, FALSE),
+(2, '1075200101', '$2a$10$WCkdAu//vr7A7P0Zd/xZTeiwc3Z/eExYuKdV6gUN95ZbQWj0xOaHO', 'CLIENTE', 1, TRUE, FALSE),
+(3, '1075200202', '$2a$10$iuWaSnP57hwezSD2w9YO1uAVzH.MO4mgEB3xQm170EC6bt2xyf5qC', 'CLIENTE', 2, TRUE, FALSE),
+(4, '1075200303', '$2a$10$Qz9MKCsigeELdWuQD9MVFOyP9anGXO.6E77jzsV7bfcR0d9RGtXOG', 'CLIENTE', 3, TRUE, FALSE),
+(5, '980045600', '$2a$10$5IaVY.kcez8xVki8yBGJIO1OlZzrzHcHoK0pqCMFgSldGnChi6mna', 'CLIENTE', 4, TRUE, TRUE),
+(6, '1075200505', '$2a$10$9TvGEkx5s00rTZ9KkKUe5.DX9agDtdyvu5rB3eX9qmJogll/r3I16', 'CLIENTE', 5, TRUE, FALSE);
 
 -- ---------------------------------------------------------------------
 -- VEHICULOS (placas y numeros de motor/chasis inventados)
 -- ---------------------------------------------------------------------
 INSERT INTO vehiculo (id, placa, marca, linea, modelo, color, clase, numero_motor, numero_chasis) VALUES
-(1, 'KXT48F', 'Yamaha', 'NMAX GPD155-A Nueva version', 2025, 'Gris', 'MOTOCICLETA', 'MTR-FICT-0001', 'CHS-FICT-0001'),
+(1, 'KXT48F', 'Yamaha', 'NMAX GPD155-A Nueva versión', 2025, 'Gris', 'MOTOCICLETA', 'MTR-FICT-0001', 'CHS-FICT-0001'),
 (2, 'JHM31G', 'Yamaha', 'XTZ-250', 2025, 'Azul', 'MOTOCICLETA', 'MTR-FICT-0002', 'CHS-FICT-0002'),
 (3, 'NPQ90E', 'Yamaha', 'FZ15A FZN150-A Nueva', 2025, 'Negro', 'MOTOCICLETA', 'MTR-FICT-0003', 'CHS-FICT-0003'),
 (4, 'LBR22H', 'Yamaha', 'XTZ150 Nueva', 2026, 'Blanco', 'MOTOCICLETA', 'MTR-FICT-0004', 'CHS-FICT-0004'),

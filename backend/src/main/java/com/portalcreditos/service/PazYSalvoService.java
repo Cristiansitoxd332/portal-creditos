@@ -14,6 +14,8 @@ import com.portalcreditos.util.Textos;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.Clock;
 import java.time.LocalDate;
@@ -119,7 +121,7 @@ public class PazYSalvoService {
                 cl.getNombreCompleto(), cl.getTipoDocumento().name(), cl.getNumeroDocumento(), c.getNumeroCredito(),
                 v.getMarca() + " " + v.getLinea() + " modelo " + v.getModelo(), v.getPlaca(), c.getValorFinanciado(),
                 c.getFechaDesembolso(), cancelacion, p.getCodigoVerificacion(),
-                urlFrontend + "/verificar/" + p.getCodigoVerificacion(),
+                urlBase() + "/verificar/" + p.getCodigoVerificacion(),
                 p.getFechaEmision() != null ? p.getFechaEmision() : LocalDateTime.now(reloj)));
     }
 
@@ -138,5 +140,20 @@ public class PazYSalvoService {
             codigo = "PYS-" + LocalDate.now(reloj).getYear() + "-" + Textos.codigo(8);
         } while (pazYSalvos.findByCodigoVerificacion(codigo).isPresent());
         return codigo;
+    }
+
+    /**
+     * Direccion del frontend para el QR. Si la peticion llega desde el navegador (cabecera Origin)
+     * con una direccion local o de la red (p. ej. un celular en el mismo WiFi), se usa esa; asi el QR
+     * abre la verificacion desde cualquier equipo. Si no, se usa app.frontend-url.
+     */
+    private String urlBase() {
+        if (RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes atributos) {
+            String origen = atributos.getRequest().getHeader("Origin");
+            if (origen != null && origen.matches("^https?://(localhost|\\d{1,3}(\\.\\d{1,3}){3})(:\\d{1,5})?$")) {
+                return origen;
+            }
+        }
+        return urlFrontend;
     }
 }
