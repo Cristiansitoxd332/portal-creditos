@@ -41,16 +41,16 @@ public class PlantillasImportacion {
                     new Columna("ciudad", false, "Ciudad", "Neiva"));
             case CREDITOS -> List.of(
                     new Columna("numero_documento_cliente", true, "Documento de un cliente ya registrado", "1075200101"),
-                    new Columna("placa", true, "ABC123 (carro) o ABC12D (moto)", "QWE321"),
-                    new Columna("marca", true, "Marca del vehiculo", "Hyundai"),
-                    new Columna("linea", true, "Linea o referencia", "Accent"),
+                    new Columna("placa", true, "ABC12D (moto) o ABC123", "QWE32A"),
+                    new Columna("marca", true, "Marca de la moto", "Yamaha"),
+                    new Columna("linea", true, "Linea o referencia", "Aerox GDR-155A"),
                     new Columna("modelo", true, "Anio modelo", "2025"),
                     new Columna("color", false, "Color", "Blanco"),
-                    new Columna("clase", true, "AUTOMOVIL, CAMIONETA, CAMPERO, MOTOCICLETA, CAMION u OTRO", "AUTOMOVIL"),
-                    new Columna("valor_vehiculo", true, "Sin puntos ni signo $", "75000000"),
-                    new Columna("cuota_inicial", true, "Puede ser 0", "20000000"),
-                    new Columna("tasa_mensual", true, "Porcentaje mensual, ej. 1.5 (use punto decimal)", "1.5"),
-                    new Columna("plazo_meses", true, "Entre 1 y 120", "48"),
+                    new Columna("clase", true, "AUTOMOVIL, CAMIONETA, CAMPERO, MOTOCICLETA, CAMION u OTRO", "MOTOCICLETA"),
+                    new Columna("valor_vehiculo", true, "Precio moto + matricula con prenda, sin puntos ni signo $", "13600000"),
+                    new Columna("cuota_inicial", true, "Puede ser 0", "2000000"),
+                    new Columna("tasa_mensual", true, "Porcentaje mensual, ej. 1.5 (use punto decimal)", "1.85"),
+                    new Columna("plazo_meses", true, "Entre 1 y 120", "36"),
                     new Columna("fecha_desembolso", true, "aaaa-mm-dd o dd/mm/aaaa", "2026-09-01"),
                     new Columna("fecha_primera_cuota", false, "Si se omite: un mes despues del desembolso", "2026-10-01"));
             case PAGOS -> List.of(

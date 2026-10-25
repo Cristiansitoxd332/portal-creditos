@@ -4,6 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { debounceTime, filter, map, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
+import { CATALOGO_YAMAHA, ReferenciaMoto } from '../../core/catalogo-motos';
 import { ClaseVehiculo, PlanAmortizacion } from '../../core/models';
 import { hoyIso, mensajeError } from '../../core/utilidades';
 import { Encabezado } from '../../shared/componentes';
@@ -17,7 +18,7 @@ import { FechaPipe, MonedaPipe, NumeroPipe } from '../../shared/pipes';
   imports: [ReactiveFormsModule, Icono, Encabezado, MonedaPipe, NumeroPipe, FechaPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <app-encabezado titulo="Nuevo crédito" subtitulo="Registra el vehículo y las condiciones financieras" volver="/admin/creditos" />
+    <app-encabezado titulo="Nuevo crédito" subtitulo="Registra la moto y las condiciones financieras" volver="/admin/creditos" />
 
     <form [formGroup]="form" (ngSubmit)="guardar()" class="distribucion">
       <div class="columna">
@@ -34,7 +35,23 @@ import { FechaPipe, MonedaPipe, NumeroPipe } from '../../shared/pipes';
         </section>
 
         <section class="tarjeta">
-          <h2><span class="paso">2</span>Vehículo (garantía prendaria)</h2>
+          <h2><span class="paso">2</span>Moto (garantía prendaria)</h2>
+          <div class="campo referencia">
+            <label for="ref">Referencia Yamaha</label>
+            <select id="ref" [value]="referencia()?.codigo ?? ''" (change)="elegirReferencia($any($event.target).value)">
+              <option value="">Otra (escribir a mano)</option>
+              @for (r of catalogo; track r.codigo) { <option [value]="r.codigo">{{ r.linea }} · {{ r.precio | moneda }}</option> }
+            </select>
+            <span class="ayuda">Llena marca, línea y valor (precio de la moto + matrícula con prenda).</span>
+          </div>
+          @if (referencia(); as r) {
+            <div class="desglose">
+              <div><span>Precio moto</span><strong>{{ r.precio | moneda }}</strong></div>
+              <div><span>Matrícula con prenda</span><strong>{{ r.matriculaConPrenda | moneda }}</strong></div>
+              <div><span>Total</span><strong class="rojo">{{ r.precio + r.matriculaConPrenda | moneda }}</strong></div>
+            </div>
+            <p class="texto-suave nota">De contado (sin prenda) la matrícula sería {{ r.matriculaSinPrenda | moneda }}.</p>
+          }
           <div class="rejilla-form">
             <div class="campo" [class.invalido]="invalido('placa')"><label for="pl">Placa</label><input id="pl" formControlName="placa" placeholder="ABC123" class="mayus"><span class="error">Formato ABC123 o ABC12D.</span></div>
             <div class="campo"><label for="cl">Clase</label><select id="cl" formControlName="clase">@for (c of clases; track c) { <option [value]="c">{{ c }}</option> }</select></div>
@@ -50,7 +67,7 @@ import { FechaPipe, MonedaPipe, NumeroPipe } from '../../shared/pipes';
         <section class="tarjeta">
           <h2><span class="paso">3</span>Condiciones financieras</h2>
           <div class="rejilla-form">
-            <div class="campo" [class.invalido]="invalido('valorVehiculo')"><label for="vv">Valor del vehículo</label><input id="vv" type="number" formControlName="valorVehiculo" min="1"><span class="error">Valor mayor a cero.</span></div>
+            <div class="campo" [class.invalido]="invalido('valorVehiculo')"><label for="vv">Valor total (moto + matrícula)</label><input id="vv" type="number" formControlName="valorVehiculo" min="1"><span class="error">Valor mayor a cero.</span></div>
             <div class="campo" [class.invalido]="invalido('cuotaInicial')"><label for="ci">Cuota inicial</label><input id="ci" type="number" formControlName="cuotaInicial" min="0"><span class="error">Valor no válido.</span></div>
             <div class="campo" [class.invalido]="invalido('tasaInteresMensual')"><label for="ta">Tasa mensual (%)</label><input id="ta" type="number" step="0.01" formControlName="tasaInteresMensual"><span class="error">Entre 0 y 5 %.</span></div>
             <div class="campo" [class.invalido]="invalido('plazoMeses')"><label for="pz">Plazo (meses)</label><input id="pz" type="number" formControlName="plazoMeses"><span class="error">Entre 6 y 120 meses.</span></div>
@@ -103,6 +120,11 @@ import { FechaPipe, MonedaPipe, NumeroPipe } from '../../shared/pipes';
     h2 { font-size: 16px; font-weight: 800; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; }
     .paso { width: 26px; height: 26px; border-radius: 13px; background: var(--rojo); color: #fff; font-size: 13px; display: flex; align-items: center; justify-content: center; }
     .mayus { text-transform: uppercase; }
+    .referencia { margin-bottom: 12px; }
+    .desglose { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; background: var(--rojo-suave); border-radius: 12px; padding: 12px; }
+    .desglose div { display: flex; flex-direction: column; }
+    .desglose span { font-size: 12px; color: var(--texto-3); }
+    .nota { margin: 6px 0 14px; font-size: 12.5px; }
     .pegajosa { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 12px; }
     .datos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 12px 0; border-top: 1px solid var(--borde); border-bottom: 1px solid var(--borde); }
     .datos div { display: flex; flex-direction: column; }
@@ -118,6 +140,8 @@ export class NuevoCredito {
   private readonly router = inject(Router);
   private readonly notificaciones = inject(NotificacionService);
 
+  protected readonly catalogo = CATALOGO_YAMAHA;
+  protected readonly referencia = signal<ReferenciaMoto | null>(null);
   protected readonly clases: ClaseVehiculo[] = ['AUTOMOVIL', 'CAMIONETA', 'CAMPERO', 'MOTOCICLETA', 'CAMION', 'OTRO'];
   protected readonly guardando = signal(false);
   protected readonly clientes = toSignal(this.api.clientes(), { initialValue: [] });
@@ -125,17 +149,17 @@ export class NuevoCredito {
   protected readonly form = inject(FormBuilder).group({
     clienteId: [null as number | null, Validators.required],
     placa: ['', [Validators.required, Validators.pattern(/^[A-Za-z]{3}[0-9]{2}[0-9A-Za-z]$/)]],
-    clase: ['AUTOMOVIL' as ClaseVehiculo],
-    marca: ['', Validators.required],
+    clase: ['MOTOCICLETA' as ClaseVehiculo],
+    marca: ['Yamaha', Validators.required],
     linea: ['', Validators.required],
-    modelo: [2025, [Validators.required, Validators.min(1990), Validators.max(2027)]],
+    modelo: [2026, [Validators.required, Validators.min(1990), Validators.max(2027)]],
     color: [''],
     numeroMotor: [''],
     numeroChasis: [''],
-    valorVehiculo: [80_000_000, [Validators.required, Validators.min(1)]],
-    cuotaInicial: [20_000_000, [Validators.required, Validators.min(0)]],
-    tasaInteresMensual: [1.5, [Validators.required, Validators.min(0), Validators.max(5)]],
-    plazoMeses: [48, [Validators.required, Validators.min(6), Validators.max(120)]],
+    valorVehiculo: [0, [Validators.required, Validators.min(1)]],
+    cuotaInicial: [0, [Validators.required, Validators.min(0)]],
+    tasaInteresMensual: [2.0, [Validators.required, Validators.min(0), Validators.max(5)]],
+    plazoMeses: [36, [Validators.required, Validators.min(6), Validators.max(120)]],
     fechaDesembolso: [hoyIso(), Validators.required],
     fechaPrimeraCuota: [''],
   });
@@ -158,8 +182,20 @@ export class NuevoCredito {
   );
 
   constructor() {
-    // dispara la primera simulacion con los valores por defecto
-    queueMicrotask(() => this.form.updateValueAndValidity({ emitEvent: true }));
+    // arranca con la NMAX seleccionada para mostrar la cuota de inmediato
+    queueMicrotask(() => this.elegirReferencia('NMAX'));
+  }
+
+  /** Llena la moto y sugiere una cuota inicial del 15 % (redondeada a miles). */
+  protected elegirReferencia(codigo: string): void {
+    const r = this.catalogo.find((x) => x.codigo === codigo) ?? null;
+    this.referencia.set(r);
+    if (!r) return;
+    const total = r.precio + r.matriculaConPrenda;
+    this.form.patchValue({
+      marca: 'Yamaha', linea: r.linea, clase: 'MOTOCICLETA',
+      valorVehiculo: total, cuotaInicial: Math.round((total * 0.15) / 1000) * 1000,
+    });
   }
 
   private unMesDespues(fecha: string): string {

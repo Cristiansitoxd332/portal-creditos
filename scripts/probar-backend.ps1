@@ -1,4 +1,4 @@
-<#
+﻿<#
   PRUEBA AUTOMATICA DE LA API - Portal de Consulta de Creditos (prototipo, datos ficticios)
 
   Antes de ejecutar:
@@ -135,7 +135,7 @@ $doc = "88" + (Get-Random -Minimum 10000000 -Maximum 99999999)
 $cred = ApiSend Post "/admin/clientes" $adm @{ tipoDocumento = "CC"; numeroDocumento = $doc; nombres = "Cliente"; apellidos = "De Prueba"; correo = "prueba@correo-ficticio.com"; telefono = "3001234567"; ciudad = "Neiva" }
 Exito "Crear cliente con clave temporal" ($cred.usuario + " / " + $cred.passwordTemporal)
 $placa = "ZZ" + [char](65 + (Get-Random -Maximum 26)) + (Get-Random -Minimum 100 -Maximum 999)
-$nc = ApiSend Post "/admin/creditos" $adm @{ clienteId = $cred.clienteId; placa = $placa; marca = "Chevrolet"; linea = "Tracker"; modelo = 2026; color = "Gris"; clase = "CAMIONETA"; valorVehiculo = 110000000; cuotaInicial = 30000000; tasaInteresMensual = 1.5; plazoMeses = 60; fechaDesembolso = "2026-10-01" }
+$nc = ApiSend Post "/admin/creditos" $adm @{ clienteId = $cred.clienteId; placa = $placa; marca = "Yamaha"; linea = "Aerox GDR-155A"; modelo = 2026; color = "Azul"; clase = "MOTOCICLETA"; valorVehiculo = 13600000; cuotaInicial = 2000000; tasaInteresMensual = 1.85; plazoMeses = 36; fechaDesembolso = "2026-10-01" }
 Exito "Crear credito con plan automatico" ($nc.resumen.numeroCredito + ", cuota $" + $nc.resumen.valorCuota)
 $nuevo = Login $doc $cred.passwordTemporal
 $p = Invoke-RestMethod -Uri "$api/auth/perfil" -Headers $nuevo
