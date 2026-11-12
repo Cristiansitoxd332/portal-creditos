@@ -61,7 +61,7 @@ import { MonedaPipe, NumeroPipe } from '../../shared/pipes';
     .filtros { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; align-items: center; }
     .buscador { flex: 1 1 280px; display: flex; align-items: center; gap: 10px; background: var(--superficie); border: 1.5px solid var(--borde-fuerte);
       border-radius: 14px; padding: 0 14px; height: 48px; color: var(--texto-3); }
-    .buscador:focus-within { border-color: var(--rojo); }
+    .buscador:focus-within { border-color: var(--primario); }
     .buscador input { flex: 1; border: 0; background: transparent; font: inherit; color: var(--texto); outline: none; height: 100%; }
     .pestanas { display: flex; gap: 6px; flex-wrap: wrap; }
     .pestanas button { height: 40px; padding: 0 14px; border-radius: 999px; border: 1.5px solid var(--borde-fuerte); background: var(--superficie);
@@ -72,7 +72,7 @@ import { MonedaPipe, NumeroPipe } from '../../shared/pipes';
     .sin-relleno { padding: 0; }
     .clic { cursor: pointer; }
     .progreso { width: 80px; height: 6px; border-radius: 3px; background: var(--superficie-2); overflow: hidden; margin-left: auto; margin-bottom: 3px; }
-    .progreso span { display: block; height: 100%; background: var(--rojo); }
+    .progreso span { display: block; height: 100%; background: var(--primario); }
     .mora { color: var(--mora); font-weight: 700; }
     .vacio { text-align: center; color: var(--texto-3); padding: 24px; }
   `],

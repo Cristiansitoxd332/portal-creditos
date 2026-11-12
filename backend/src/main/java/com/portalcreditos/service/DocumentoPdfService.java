@@ -40,7 +40,9 @@ import java.util.Locale;
 @Service
 public class DocumentoPdfService {
 
-    private static final Color ROJO = new Color(0xD3, 0x20, 0x2B);
+    /** Azul de la identidad de Rentar (encabezados). El rojo se reserva para avisos. */
+    private static final Color AZUL = new Color(0x15, 0x65, 0xC0);
+    private static final Color ROJO = new Color(0xC6, 0x28, 0x28);
     private static final Color GRIS = new Color(0x5F, 0x63, 0x68);
     private static final Color GRIS_CLARO = new Color(0xF2, 0xF2, 0xF3);
     private static final Locale CO = Locale.forLanguageTag("es-CO");
@@ -126,7 +128,7 @@ public class DocumentoPdfService {
         texto.setVerticalAlignment(Element.ALIGN_MIDDLE);
         texto.addElement(parrafo("Verifique la autenticidad de este documento", fuente(10, Font.BOLD, Color.BLACK), Element.ALIGN_LEFT, 4));
         texto.addElement(parrafo("Escanee el código QR o ingrese a:", fuente(9, Font.NORMAL, GRIS), Element.ALIGN_LEFT, 2));
-        texto.addElement(parrafo(d.urlVerificacion(), fuente(9, Font.NORMAL, ROJO), Element.ALIGN_LEFT, 2));
+        texto.addElement(parrafo(d.urlVerificacion(), fuente(9, Font.NORMAL, AZUL), Element.ALIGN_LEFT, 2));
         texto.addElement(parrafo("Código: " + d.codigoVerificacion(), fuente(9, Font.BOLD, Color.BLACK), Element.ALIGN_LEFT, 0));
         tabla.addCell(texto);
         doc.add(tabla);
@@ -183,7 +185,7 @@ public class DocumentoPdfService {
             cuotas.setWidthPercentage(100);
             for (String t : new String[]{"Cuota", "Valor aplicado", "Estado de la cuota"}) {
                 PdfPCell h = new PdfPCell(new Phrase(t, fuente(9, Font.BOLD, Color.WHITE)));
-                h.setBackgroundColor(ROJO);
+                h.setBackgroundColor(AZUL);
                 h.setPadding(5);
                 cuotas.addCell(h);
             }
@@ -208,7 +210,7 @@ public class DocumentoPdfService {
         PdfContentByte cb = writer.getDirectContent();
         Rectangle pagina = doc.getPageSize();
         cb.saveState();
-        cb.setColorFill(ROJO);
+        cb.setColorFill(AZUL);
         cb.rectangle(0, pagina.getHeight() - 70, pagina.getWidth(), 70);
         cb.fill();
         cb.restoreState();

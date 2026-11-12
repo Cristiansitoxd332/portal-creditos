@@ -7,19 +7,19 @@ import { mensajeError } from '../../core/utilidades';
 import { Cargando, Encabezado } from '../../shared/componentes';
 import { Icono } from '../../shared/icono';
 import { NotificacionService } from '../../shared/notificaciones';
-import { FechaPipe } from '../../shared/pipes';
+import { FechaPipe, MonedaPipe } from '../../shared/pipes';
 
 const TEXTO_ESTADO: Record<EstadoSolicitud, string> = {
   RADICADA: 'Radicada', EN_REVISION: 'En revisión', APROBADA: 'Aprobada', RECHAZADA: 'Rechazada',
 };
 const CLASE_ESTADO: Record<EstadoSolicitud, string> = {
-  RADICADA: 'chip-rojo', EN_REVISION: 'chip-alerta', APROBADA: 'chip-ok', RECHAZADA: 'chip-mora',
+  RADICADA: 'chip-primario', EN_REVISION: 'chip-alerta', APROBADA: 'chip-ok', RECHAZADA: 'chip-mora',
 };
 
 /** Bandeja de solicitudes de levantamiento de prenda. */
 @Component({
   selector: 'app-solicitudes',
-  imports: [FormsModule, RouterLink, Icono, Encabezado, Cargando, FechaPipe],
+  imports: [FormsModule, RouterLink, Icono, Encabezado, Cargando, FechaPipe, MonedaPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-encabezado titulo="Solicitudes" subtitulo="Levantamiento de prenda radicado por los clientes" />
@@ -41,6 +41,14 @@ const CLASE_ESTADO: Record<EstadoSolicitud, string> = {
             <dl>
               <div><dt>Cliente</dt><dd>{{ s.cliente }} · {{ s.documentoCliente }}</dd></div>
               <div><dt>Crédito / placa</dt><dd><a [routerLink]="['/admin/creditos', s.creditoId]">{{ s.numeroCredito }}</a> · {{ s.placa }}</dd></div>
+              <div><dt>Pago del trámite (cuenta {{ s.cuentaRecaudo ?? '—' }})</dt>
+                <dd>@if (s.referenciaPagoTramite) { <span class="chip chip-ok">Pagado</span> {{ s.valorTramite | moneda }} · {{ s.medioPagoTramite }} · {{ s.referenciaPagoTramite }} }
+                  @else { <span class="chip chip-alerta">Sin pago registrado</span> }</dd></div>
+              @if (s.vigenteHasta) {
+                <div><dt>Vigencia del documento</dt>
+                  <dd><span [class]="'chip ' + (s.documentoVigente ? 'chip-ok' : 'chip-mora')">{{ s.documentoVigente ? 'Vigente' : 'Vencido' }}</span>
+                    hasta {{ s.vigenteHasta | fecha }}</dd></div>
+              }
             </dl>
             @if (s.observacionCliente) { <p class="cita">“{{ s.observacionCliente }}”</p> }
             @if (s.respuestaAdmin) { <p class="respuesta"><app-icono nombre="chat" [tamano]="16" />{{ s.respuestaAdmin }}</p> }
@@ -51,7 +59,7 @@ const CLASE_ESTADO: Record<EstadoSolicitud, string> = {
                   <div class="campo"><label [for]="'es' + s.id">Nuevo estado</label>
                     <select [id]="'es' + s.id" name="estado" [(ngModel)]="nuevoEstado">
                       @if (s.estado === 'RADICADA') { <option value="EN_REVISION">En revisión</option> }
-                      <option value="APROBADA">Aprobada (prenda levantada)</option>
+                      <option value="APROBADA">Aprobada (prenda levantada · vigencia 30 días)</option>
                       <option value="RECHAZADA">Rechazada</option>
                     </select></div>
                   <div class="campo"><label [for]="'re' + s.id">Respuesta al cliente</label>

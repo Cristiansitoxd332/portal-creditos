@@ -46,7 +46,7 @@ import { FechaPipe } from '../../shared/pipes';
   styles: [`
     .contenido { display: flex; flex-direction: column; gap: 14px; max-width: 560px; }
     .cabecera { display: flex; align-items: center; gap: 16px; }
-    .avatar { width: 60px; height: 60px; border-radius: 30px; background: var(--rojo); color: #fff; font-weight: 800; font-size: 22px; display: flex; align-items: center; justify-content: center; }
+    .avatar { width: 60px; height: 60px; border-radius: 30px; background: var(--primario); color: #fff; font-weight: 800; font-size: 22px; display: flex; align-items: center; justify-content: center; }
     h2 { font-size: 18px; font-weight: 800; }
     .datos { margin: 0; display: grid; gap: 12px; }
     .datos div { display: flex; flex-direction: column; }
@@ -60,7 +60,7 @@ import { FechaPipe } from '../../shared/pipes';
     .salir { color: var(--mora); }
     .interruptor { width: 44px; height: 26px; border-radius: 13px; background: var(--borde-fuerte); position: relative; transition: background 0.2s; }
     .interruptor::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 10px; background: #fff; transition: transform 0.2s; }
-    .interruptor.on { background: var(--rojo); }
+    .interruptor.on { background: var(--primario); }
     .interruptor.on::after { transform: translateX(18px); }
   `],
 })

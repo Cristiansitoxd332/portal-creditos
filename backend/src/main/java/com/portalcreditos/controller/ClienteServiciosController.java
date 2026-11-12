@@ -85,7 +85,7 @@ public class ClienteServiciosController {
     @PostMapping("/levantamiento")
     public SolicitudInfo solicitarLevantamiento(@PathVariable Long creditoId, @Valid @RequestBody SolicitudRequest r,
                                                 HttpServletRequest request) {
-        return levantamiento.solicitar(usuario.getClienteId(), creditoId, r.observacion(), usuario.getUsername(),
+        return levantamiento.solicitar(usuario.getClienteId(), creditoId, r.observacion(), r.medioPago(), usuario.getUsername(),
                 request.getRemoteAddr());
     }
 }

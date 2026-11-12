@@ -122,7 +122,7 @@ public class PazYSalvoService {
                 v.getMarca() + " " + v.getLinea() + " modelo " + v.getModelo(), v.getPlaca(), c.getValorFinanciado(),
                 c.getFechaDesembolso(), cancelacion, p.getCodigoVerificacion(),
                 urlBase() + "/verificar/" + p.getCodigoVerificacion(),
-                p.getFechaEmision() != null ? p.getFechaEmision() : LocalDateTime.now(reloj)));
+                LocalDateTime.now(reloj))); // el certificado se expide con la fecha y hora en que se descarga
     }
 
     private boolean estaCancelado(Credito c) {

@@ -26,7 +26,7 @@ import { Icono } from '../../shared/icono';
           <label for="usuario">Número de documento</label>
           <input id="usuario" formControlName="usuario" autocomplete="username" inputmode="text"
                  [class.invalido]="invalido('usuario')" placeholder="Ej. 1075200101">
-          @if (invalido('usuario')) { <span class="error">Ingrese su número de documento.</span> }
+          @if (invalido('usuario')) { <span class="error activo">Ingrese su número de documento.</span> }
         </div>
         <div class="campo">
           <label for="clave">Contraseña</label>
@@ -38,7 +38,7 @@ import { Icono } from '../../shared/icono';
               <app-icono [nombre]="verClave() ? 'x' : 'eye'" [tamano]="18" />
             </button>
           </div>
-          @if (invalido('clave')) { <span class="error">Ingrese su contraseña.</span> }
+          @if (invalido('clave')) { <span class="error activo">Ingrese su contraseña.</span> }
         </div>
         @if (error()) {
           <div class="aviso aviso-mora" role="alert"><app-icono nombre="alert" [tamano]="18" /><span>{{ error() }}</span></div>
@@ -68,12 +68,12 @@ import { Icono } from '../../shared/icono';
   `,
   styles: [`
     .pantalla { max-width: 460px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }
-    .portada { background: var(--rojo); color: #fff; padding: 48px 28px 76px; border-radius: 0 0 32px 32px; display: flex; flex-direction: column; gap: 28px; }
+    .portada { background: var(--primario); color: #fff; padding: 48px 28px 76px; border-radius: 0 0 32px 32px; display: flex; flex-direction: column; gap: 28px; }
     .marca { display: flex; align-items: center; gap: 10px; }
     .marca span:last-child { display: flex; flex-direction: column; line-height: 1.2; }
     .marca strong { font-size: 20px; font-weight: 800; }
     .marca small { font-size: 12px; opacity: 0.85; }
-    .logo { width: 42px; height: 42px; border-radius: 12px; background: #fff; color: var(--rojo); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 22px; }
+    .logo { width: 42px; height: 42px; border-radius: 12px; background: #fff; color: var(--primario); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 22px; }
     h1 { font-size: 30px; line-height: 1.15; font-weight: 800; letter-spacing: -0.6px; }
     .mensaje p { margin: 8px 0 0; opacity: 0.92; }
     .formulario { margin: -44px 16px 0; display: flex; flex-direction: column; gap: 16px; padding: 24px; }

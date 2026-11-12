@@ -1,22 +1,23 @@
 /* =====================================================================
    Estilos globales - Portal de Consulta de Creditos (prototipo)
-   Identidad: rojo y blanco. Los colores se definen como variables (tokens)
+   Identidad: azul claro y blanco (colores de Rentar Inversiones / Yamaha).
+   El rojo se reserva para la mora y los errores. Los colores se definen como variables (tokens)
    para soportar modo claro y oscuro.
    ===================================================================== */
 
 :root {
-  --rojo: #d3202b;
-  --rojo-oscuro: #b3121d;
-  --rojo-suave: #fff1f1;
-  --rojo-borde: #f5c2c5;
-  --fondo: #f5f5f7;
+  --primario: #1565c0;
+  --primario-oscuro: #0d47a1;
+  --primario-suave: #e7f1fd;
+  --primario-borde: #b6d2f3;
+  --fondo: #edf4fc;
   --superficie: #ffffff;
-  --superficie-2: #f5f5f7;
+  --superficie-2: #f2f7fd;
   --texto: #1f2328;
   --texto-2: #4a5058;
   --texto-3: #5f6670;
-  --borde: #e1e4e8;
-  --borde-fuerte: #d0d4da;
+  --borde: #dbe6f2;
+  --borde-fuerte: #c5d4e5;
   --ok: #146c2e;
   --ok-fondo: #e6f4ea;
   --ok-solido: #1e8e3e;
@@ -32,11 +33,11 @@
 }
 
 :root[data-tema='oscuro'] {
-  --rojo: #e5484d;
-  --rojo-oscuro: #ff6b70;
-  --rojo-suave: #3a1b1d;
-  --rojo-borde: #6b2a2e;
-  --fondo: #111214;
+  --primario: #2a78d4;
+  --primario-oscuro: #82b9f6;
+  --primario-suave: #14253b;
+  --primario-borde: #234670;
+  --fondo: #0f141b;
   --superficie: #1c1d20;
   --superficie-2: #26282c;
   --texto: #eceef1;
@@ -70,10 +71,10 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-a { color: var(--rojo-oscuro); }
+a { color: var(--primario-oscuro); }
 h1, h2, h3 { margin: 0; letter-spacing: -0.3px; }
 
-:focus-visible { outline: 3px solid color-mix(in srgb, var(--rojo) 55%, transparent); outline-offset: 2px; }
+:focus-visible { outline: 3px solid color-mix(in srgb, var(--primario) 55%, transparent); outline-offset: 2px; }
 
 /* ---------- tarjetas ---------- */
 .tarjeta {
@@ -104,8 +105,8 @@ h1, h2, h3 { margin: 0; letter-spacing: -0.3px; }
 }
 .btn:active { transform: scale(0.98); }
 .btn:disabled { opacity: 0.55; cursor: not-allowed; }
-.btn-primario { background: var(--rojo); color: #fff; }
-.btn-primario:hover:not(:disabled) { background: var(--rojo-oscuro); }
+.btn-primario { background: var(--primario); color: #fff; }
+.btn-primario:hover:not(:disabled) { background: var(--primario-oscuro); }
 .btn-secundario { background: var(--superficie); color: var(--texto); border: 1.5px solid var(--borde-fuerte); }
 .btn-secundario:hover:not(:disabled) { background: var(--superficie-2); }
 .btn-exito { background: var(--ok-solido); color: #fff; }
@@ -129,9 +130,12 @@ h1, h2, h3 { margin: 0; letter-spacing: -0.3px; }
   background: var(--superficie);
 }
 .campo textarea { height: auto; min-height: 90px; padding: 12px 14px; resize: vertical; }
-.campo input:focus, .campo select:focus, .campo textarea:focus { border-color: var(--rojo); outline: none; }
+.campo input:focus, .campo select:focus, .campo textarea:focus { border-color: var(--primario); outline: none; }
+.campo input[readonly] { background: var(--superficie-2); color: var(--texto-2); }
 .campo .ayuda { font-size: 12px; color: var(--texto-3); }
 .campo .error { font-size: 12.5px; color: var(--mora); font-weight: 600; }
+/* el mensaje de error solo aparece cuando el campo es invalido y ya fue tocado */
+.campo:not(.invalido) .error:not(.activo) { display: none; }
 .campo input.invalido { border-color: var(--mora); }
 
 .rejilla-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
@@ -151,7 +155,7 @@ h1, h2, h3 { margin: 0; letter-spacing: -0.3px; }
 .chip-alerta { background: var(--alerta-fondo); color: var(--alerta); }
 .chip-mora { background: var(--mora-fondo); color: var(--mora); }
 .chip-neutro { background: var(--neutro-fondo); color: var(--neutro); }
-.chip-rojo { background: var(--rojo); color: #fff; }
+.chip-primario { background: var(--primario); color: #fff; }
 
 /* ---------- texto ---------- */
 .etiqueta { font-size: 12px; color: var(--texto-3); }
@@ -171,7 +175,7 @@ h1, h2, h3 { margin: 0; letter-spacing: -0.3px; }
   gap: 10px;
   align-items: flex-start;
 }
-.aviso-mora { background: var(--mora-fondo); color: var(--mora); border: 1.5px solid var(--rojo-borde); }
+.aviso-mora { background: var(--mora-fondo); color: var(--mora); border: 1.5px solid color-mix(in srgb, var(--mora) 30%, transparent); }
 .aviso-ok { background: var(--ok-fondo); color: var(--ok); }
 
 /* ---------- tablas ---------- */

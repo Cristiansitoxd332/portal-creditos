@@ -21,7 +21,7 @@ h2 { font-size: 16px; font-weight: 800; margin-bottom: 12px; }
   strong { font-size: 14.5px; }
   small { font-size: 12px; color: var(--texto-3); }
   b { font-size: 16px; white-space: nowrap; }
-  &.activa { border: 2px solid var(--rojo); background: var(--rojo-suave); }
+  &.activa { border: 2px solid var(--primario); background: var(--primario-suave); }
 }
 
 .otro input {
@@ -55,7 +55,7 @@ h2 { font-size: 16px; font-weight: 800; margin-bottom: 12px; }
   font: inherit;
   font-weight: 700;
   cursor: pointer;
-  &.activa { border: 2px solid var(--rojo); background: var(--rojo-suave); color: var(--rojo-oscuro); }
+  &.activa { border: 2px solid var(--primario); background: var(--primario-suave); color: var(--primario-oscuro); }
 }
 
 .demo {
@@ -66,7 +66,7 @@ h2 { font-size: 16px; font-weight: 800; margin-bottom: 12px; }
   font-size: 13px;
   color: var(--texto-3);
   cursor: pointer;
-  input { width: 18px; height: 18px; accent-color: var(--rojo); }
+  input { width: 18px; height: 18px; accent-color: var(--primario); }
 }
 
 .confirmar { display: flex; flex-direction: column; gap: 14px; }

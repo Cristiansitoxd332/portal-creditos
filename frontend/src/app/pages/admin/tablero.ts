@@ -9,7 +9,7 @@ import { Icono } from '../../shared/icono';
 import { FechaPipe, MonedaPipe, NumeroPipe } from '../../shared/pipes';
 
 const COLOR_SEMAFORO: Record<Semaforo, string> = {
-  AL_DIA: 'var(--ok)', PROXIMA_A_VENCER: 'var(--alerta)', EN_MORA: 'var(--rojo)', CANCELADO: 'var(--texto-3)',
+  AL_DIA: 'var(--ok)', PROXIMA_A_VENCER: 'var(--alerta)', EN_MORA: 'var(--mora)', CANCELADO: 'var(--texto-3)',
 };
 
 /** Tablero del administrador: indicadores de cartera, distribucion y pagos recientes. */
@@ -38,6 +38,11 @@ const COLOR_SEMAFORO: Record<Semaforo, string> = {
           <span class="etiqueta">Pagos del mes</span>
           <strong>{{ t.pagosMesValor | moneda }}</strong>
           <small>{{ t.pagosMesCantidad }} pagos aprobados</small>
+        </article>
+        <article class="tarjeta kpi aparecer">
+          <span class="etiqueta">Recaudo trámites · cuenta {{ t.cuentaRecaudoTramites }}</span>
+          <strong>{{ t.recaudoTramites | moneda }}</strong>
+          <small>{{ t.tramitesPagados }} levantamientos pagados · separado de las cuotas</small>
         </article>
         <a class="tarjeta kpi enlace aparecer" routerLink="/admin/solicitudes">
           <span class="etiqueta">Solicitudes pendientes</span>
@@ -110,9 +115,9 @@ const COLOR_SEMAFORO: Record<Semaforo, string> = {
     .kpi { display: flex; flex-direction: column; gap: 6px; text-decoration: none; color: inherit; }
     .kpi strong { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; }
     .kpi small { font-size: 12.5px; color: var(--texto-3); display: flex; align-items: center; gap: 4px; }
-    .destacado { background: linear-gradient(135deg, var(--rojo), var(--rojo-oscuro)); color: #fff; }
+    .destacado { background: linear-gradient(135deg, var(--primario), var(--primario-oscuro)); color: #fff; }
     .destacado .etiqueta, .destacado small { color: rgba(255,255,255,0.85); }
-    .enlace:hover { border-color: var(--rojo); }
+    .enlace:hover { border-color: var(--primario); }
     .mora { color: var(--mora); }
     .paneles { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); margin-bottom: 16px; }
     h2 { font-size: 16px; font-weight: 800; margin-bottom: 14px; }
@@ -124,8 +129,8 @@ const COLOR_SEMAFORO: Record<Semaforo, string> = {
     .columnas { display: flex; gap: 10px; align-items: flex-end; height: 170px; }
     .col { flex: 1; height: 100%; display: flex; flex-direction: column; align-items: center; gap: 6px; }
     .pista { flex: 1; width: 100%; max-width: 46px; display: flex; align-items: flex-end; }
-    .relleno { width: 100%; background: var(--rojo); border-radius: 8px 8px 3px 3px; min-height: 4px; transition: height 0.6s ease; }
-    .col:last-child .relleno { background: var(--rojo-oscuro); }
+    .relleno { width: 100%; background: var(--primario); border-radius: 8px 8px 3px 3px; min-height: 4px; transition: height 0.6s ease; }
+    .col:last-child .relleno { background: var(--primario-oscuro); }
     .valor { font-size: 11.5px; font-weight: 700; color: var(--texto-2); }
     .mes { font-size: 12px; color: var(--texto-3); text-transform: capitalize; }
     .cab { display: flex; justify-content: space-between; align-items: baseline; }

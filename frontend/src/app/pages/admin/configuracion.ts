@@ -89,7 +89,7 @@ type RequisitoEdicion = Omit<RequisitoInfo, 'id'> & { id: number | null };
     h2 { font-size: 16px; font-weight: 800; }
     .editor { display: flex; flex-direction: column; gap: 12px; background: var(--superficie-2); padding: 14px; border-radius: 14px; margin-bottom: 12px; }
     .check { display: flex; gap: 8px; align-items: center; font-size: 14px; font-weight: 600; }
-    .check input { width: 18px; height: 18px; accent-color: var(--rojo); }
+    .check input { width: 18px; height: 18px; accent-color: var(--primario); }
     .acciones { display: flex; justify-content: flex-end; gap: 8px; }
     .lista { list-style: none; margin: 0; padding: 0; }
     .lista li { display: flex; align-items: center; gap: 8px; padding: 12px 0; border-bottom: 1px solid var(--borde); }

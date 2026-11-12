@@ -50,7 +50,7 @@ import { FechaPipe } from '../../shared/pipes';
   styles: [`
     .buscador { display: flex; align-items: center; gap: 10px; background: var(--superficie); border: 1.5px solid var(--borde-fuerte); border-radius: 14px;
       padding: 0 14px; height: 48px; margin-bottom: 16px; color: var(--texto-3); }
-    .buscador:focus-within { border-color: var(--rojo); }
+    .buscador:focus-within { border-color: var(--primario); }
     .buscador input { flex: 1; border: 0; background: transparent; font: inherit; color: var(--texto); outline: none; height: 100%; }
     .sin-relleno { padding: 0; }
     .fecha { white-space: nowrap; }

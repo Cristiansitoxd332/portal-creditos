@@ -38,7 +38,7 @@ import { FechaPipe, MonedaPipe } from '../../shared/pipes';
             <span class="titulo-seccion">Elige cómo aplicarlo</span>
             <article class="tarjeta opcion recomendada aparecer">
               <header><h2>Reducir el plazo</h2>
-                @if (r.reducirPlazo.ahorroIntereses >= r.reducirCuota.ahorroIntereses) { <span class="chip chip-rojo">RECOMENDADO</span> }
+                @if (r.reducirPlazo.ahorroIntereses >= r.reducirCuota.ahorroIntereses) { <span class="chip chip-primario">RECOMENDADO</span> }
               </header>
               <div class="cifras">
                 <div><span>Ahorro en intereses</span><strong class="ahorro">{{ r.reducirPlazo.ahorroIntereses | moneda }}</strong></div>
@@ -84,14 +84,14 @@ import { FechaPipe, MonedaPipe } from '../../shared/pipes';
     .rejilla { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); align-items: start; }
     .entrada { display: flex; flex-direction: column; gap: 14px; }
     .fila-dato { display: flex; justify-content: space-between; font-size: 14px; }
-    .grande { height: 58px !important; font-size: 24px !important; font-weight: 800; border: 2px solid var(--rojo) !important; }
+    .grande { height: 58px !important; font-size: 24px !important; font-weight: 800; border: 2px solid var(--primario) !important; }
     .sugeridos { display: flex; gap: 8px; flex-wrap: wrap; }
     .sugerido { height: 38px; padding: 0 14px; border-radius: 999px; border: 1.5px solid var(--borde-fuerte); background: var(--superficie); color: var(--texto);
       font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
-    .sugerido.activo { border-color: var(--rojo); background: var(--rojo-suave); color: var(--rojo-oscuro); }
+    .sugerido.activo { border-color: var(--primario); background: var(--primario-suave); color: var(--primario-oscuro); }
     .resultados { display: flex; flex-direction: column; gap: 12px; }
     .opcion { display: flex; flex-direction: column; gap: 12px; border: 1.5px solid var(--borde); }
-    .recomendada { border: 2px solid var(--rojo); }
+    .recomendada { border: 2px solid var(--primario); }
     .opcion header { display: flex; justify-content: space-between; align-items: center; }
     h2 { font-size: 16.5px; font-weight: 800; }
     .cifras { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -103,7 +103,7 @@ import { FechaPipe, MonedaPipe } from '../../shared/pipes';
     .comparacion { display: flex; flex-direction: column; gap: 10px; }
     .barra { display: grid; grid-template-columns: 110px 1fr auto; gap: 10px; align-items: center; font-size: 13px; }
     .pista { height: 12px; border-radius: 6px; background: var(--superficie-2); overflow: hidden; }
-    .relleno { height: 100%; border-radius: 6px; background: var(--rojo); transition: width 0.6s ease; }
+    .relleno { height: 100%; border-radius: 6px; background: var(--primario); transition: width 0.6s ease; }
     .relleno.base { background: var(--texto-3); }
     .vacio { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; padding: 34px; color: var(--texto-3); }
     .vacio p { margin: 0; }

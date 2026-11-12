@@ -11,7 +11,9 @@ import com.portalcreditos.entity.enums.EstadoSolicitud;
 import com.portalcreditos.repository.ClienteRepository;
 import com.portalcreditos.repository.CreditoRepository;
 import com.portalcreditos.repository.PagoRepository;
+import com.portalcreditos.entity.SolicitudLevantamiento;
 import com.portalcreditos.repository.SolicitudLevantamientoRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,12 +41,15 @@ public class DashboardService {
     private final CreditoRepository creditos;
     private final PagoRepository pagos;
     private final SolicitudLevantamientoRepository solicitudes;
+    private final String cuentaRecaudo;
     private final SituacionCreditoService situacionService;
     private final Clock reloj;
 
     public DashboardService(ClienteRepository clientes, CreditoRepository creditos, PagoRepository pagos,
                             SolicitudLevantamientoRepository solicitudes, SituacionCreditoService situacionService,
-                            Clock reloj) {
+                            Clock reloj,
+                            @Value("${app.levantamiento.cuenta-recaudo:7854}") String cuentaRecaudo) {
+        this.cuentaRecaudo = cuentaRecaudo;
         this.clientes = clientes;
         this.creditos = creditos;
         this.pagos = pagos;
@@ -99,7 +104,11 @@ public class DashboardService {
 
         long pendientes = solicitudes.countByEstadoIn(Set.of(EstadoSolicitud.RADICADA, EstadoSolicitud.EN_REVISION));
 
+        // Recaudo de tramites de levantamiento: cuenta exclusiva, NO se suma a los pagos de cuotas
+        List<SolicitudLevantamiento> pagadas = solicitudes.findAll().stream().filter(s -> s.getValorTramite() != null).toList();
+        BigDecimal recaudo = pagadas.stream().map(SolicitudLevantamiento::getValorTramite).reduce(BigDecimal.ZERO, BigDecimal::add);
+
         return new Tablero(hoy, clientes.count(), lista.size(), alDia, enMora, cancelados, cartera, vencida, indice,
-                ultimo.cantidad(), ultimo.total(), pendientes, porSemaforo, porMes);
+                ultimo.cantidad(), ultimo.total(), pendientes, porSemaforo, porMes, recaudo, pagadas.size(), cuentaRecaudo);
     }
 }

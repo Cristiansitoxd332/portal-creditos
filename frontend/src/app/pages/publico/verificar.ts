@@ -65,7 +65,7 @@ import { FechaPipe } from '../../shared/pipes';
   styles: [`
     .pagina { max-width: 560px; margin: 0 auto; padding: 32px 16px; display: flex; flex-direction: column; gap: 20px; }
     .marca { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--texto); font-size: 18px; }
-    .logo { width: 38px; height: 38px; border-radius: 11px; background: var(--rojo); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 20px; }
+    .logo { width: 38px; height: 38px; border-radius: 11px; background: var(--primario); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 20px; }
     .caja { display: flex; flex-direction: column; gap: 16px; padding: 24px; }
     h1 { font-size: 22px; font-weight: 800; }
     p { margin: 0; font-size: 14px; }

@@ -108,16 +108,16 @@ const TIPOS: { clave: TipoCarga; texto: string; descripcion: string }[] = [
     .tipos { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); margin-bottom: 16px; }
     .tipo { text-align: left; font: inherit; color: inherit; cursor: pointer; display: flex; flex-direction: column; gap: 4px; border: 2px solid var(--borde); }
     .tipo span { font-size: 13px; color: var(--texto-3); }
-    .tipo.activo { border-color: var(--rojo); background: var(--rojo-suave); }
+    .tipo.activo { border-color: var(--primario); background: var(--primario-suave); }
     .pasos { display: flex; flex-direction: column; gap: 16px; margin-bottom: 16px; }
     .paso { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
     .paso > div:first-of-type { flex: 1; min-width: 200px; }
     .paso p { margin: 0; font-size: 13px; color: var(--texto-3); }
-    .numero { width: 30px; height: 30px; border-radius: 15px; background: var(--rojo); color: #fff; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .numero { width: 30px; height: 30px; border-radius: 15px; background: var(--primario); color: #fff; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
     .botones { display: flex; gap: 8px; }
     .zona { border: 2px dashed var(--borde-fuerte); border-radius: 16px; padding: 28px; display: flex; flex-direction: column; align-items: center; gap: 6px;
       cursor: pointer; color: var(--texto-3); text-align: center; transition: border-color 0.2s, background 0.2s; }
-    .zona:hover, .zona.arrastrando { border-color: var(--rojo); background: var(--rojo-suave); color: var(--rojo-oscuro); }
+    .zona:hover, .zona.arrastrando { border-color: var(--primario); background: var(--primario-suave); color: var(--primario-oscuro); }
     .zona strong { color: var(--texto); }
     .zona span { font-size: 13px; }
     .resultado { margin-bottom: 16px; display: flex; flex-direction: column; gap: 14px; }

@@ -2,9 +2,13 @@ package com.portalcreditos.dto.levantamiento;
 
 import com.portalcreditos.entity.enums.EstadoPrenda;
 import com.portalcreditos.entity.enums.EstadoSolicitud;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -16,7 +20,11 @@ public final class LevantamientoDtos {
 
     public record SolicitudRequest(
             @Size(max = 500, message = "La observacion no puede superar 500 caracteres")
-            String observacion
+            String observacion,
+
+            @NotBlank(message = "Debe elegir el medio de pago del tramite")
+            @Pattern(regexp = "PSE|EFECTY|CONSIGNACION", message = "Medio de pago no valido")
+            String medioPago
     ) {
     }
 
@@ -50,7 +58,15 @@ public final class LevantamientoDtos {
             String observacionCliente,
             String respuestaAdmin,
             LocalDateTime fechaRespuesta,
-            List<PasoSeguimiento> seguimiento
+            List<PasoSeguimiento> seguimiento,
+            BigDecimal valorTramite,
+            String medioPagoTramite,
+            String referenciaPagoTramite,
+            LocalDateTime fechaPagoTramite,
+            String cuentaRecaudo,
+            LocalDate vigenteHasta,
+            Boolean documentoVigente,
+            Integer diasVigencia
     ) {
     }
 
@@ -62,7 +78,11 @@ public final class LevantamientoDtos {
             boolean puedeSolicitar,
             String mensaje,
             List<SolicitudInfo> solicitudes,
-            String aviso
+            String aviso,
+            BigDecimal costoTramite,
+            int vigenciaDias,
+            String cuentaRecaudo,
+            List<String> mediosPago
     ) {
     }
 }

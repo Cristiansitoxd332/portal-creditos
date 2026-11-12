@@ -7,6 +7,7 @@ import {
   CreditoResumen, EstadoLevantamiento, EstadoSolicitud, ImportacionInfo, OpcionesPago, PagoHistorial, PagoRequest,
   PazYSalvoEstado, Perfil, PlanAmortizacion, PlanPagos, RegistroAuditoria, RequisitoInfo, ResultadoImportacion,
   SimulacionAbono, SolicitudInfo, Tablero, TipoCarga, VerificacionPazYSalvo,
+  BandejaCliente, MensajeInfo, PanelAvisos, ResultadoEnvio, TipoMensaje,
 } from './models';
 
 /**
@@ -70,8 +71,8 @@ export class ApiService {
   estadoLevantamiento(id: number): Observable<EstadoLevantamiento> {
     return this.http.get<EstadoLevantamiento>(`${API_URL}/cliente/creditos/${id}/levantamiento`);
   }
-  solicitarLevantamiento(id: number, observacion: string): Observable<SolicitudInfo> {
-    return this.http.post<SolicitudInfo>(`${API_URL}/cliente/creditos/${id}/levantamiento`, { observacion });
+  solicitarLevantamiento(id: number, observacion: string, medioPago: string): Observable<SolicitudInfo> {
+    return this.http.post<SolicitudInfo>(`${API_URL}/cliente/creditos/${id}/levantamiento`, { observacion, medioPago });
   }
 
   // ============================================================ administrador
@@ -168,6 +169,30 @@ export class ApiService {
   }
   importaciones(): Observable<ImportacionInfo[]> {
     return this.http.get<ImportacionInfo[]>(`${API_URL}/admin/importaciones`);
+  }
+
+  // ============================================================ mensajes a clientes
+
+  avisosMensajes(): Observable<PanelAvisos> {
+    return this.http.get<PanelAvisos>(`${API_URL}/admin/mensajes/avisos`);
+  }
+  enviarMensaje(creditoId: number, tipo: TipoMensaje, texto: string): Observable<MensajeInfo> {
+    return this.http.post<MensajeInfo>(`${API_URL}/admin/mensajes`, { creditoId, tipo, texto });
+  }
+  enviarMensajesTodos(tipo: Exclude<TipoMensaje, 'GENERAL'>): Observable<ResultadoEnvio> {
+    return this.http.post<ResultadoEnvio>(`${API_URL}/admin/mensajes/todos`, { tipo });
+  }
+  historialMensajes(): Observable<MensajeInfo[]> {
+    return this.http.get<MensajeInfo[]>(`${API_URL}/admin/mensajes`);
+  }
+  misMensajes(): Observable<BandejaCliente> {
+    return this.http.get<BandejaCliente>(`${API_URL}/cliente/mensajes`);
+  }
+  mensajesNoLeidos(): Observable<{ noLeidos: number }> {
+    return this.http.get<{ noLeidos: number }>(`${API_URL}/cliente/mensajes/no-leidos`);
+  }
+  marcarMensajeLeido(id: number): Observable<MensajeInfo> {
+    return this.http.post<MensajeInfo>(`${API_URL}/cliente/mensajes/${id}/leido`, {});
   }
 
   private formulario(archivo: File): FormData {

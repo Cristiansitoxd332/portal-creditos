@@ -95,7 +95,9 @@ public final class AdminDtos {
             @Digits(integer = 2, fraction = 4) BigDecimal tasaInteresMensual,
             @NotNull(message = "El plazo es obligatorio") @Min(1) @Max(120) Integer plazoMeses,
             @NotNull(message = "La fecha de desembolso es obligatoria") LocalDate fechaDesembolso,
-            LocalDate fechaPrimeraCuota
+            LocalDate fechaPrimeraCuota,
+            /** true = el administrador confirmo que es un credito ADICIONAL (otra moto) para un cliente con credito activo. */
+            Boolean creditoAdicional
     ) {
     }
 
@@ -127,7 +129,10 @@ public final class AdminDtos {
             BigDecimal pagosMesValor,
             long solicitudesPendientes,
             Map<Semaforo, Long> creditosPorSemaforo,
-            List<PagosMes> pagosUltimosMeses
+            List<PagosMes> pagosUltimosMeses,
+            BigDecimal recaudoTramites,
+            long tramitesPagados,
+            String cuentaRecaudoTramites
     ) {
     }
 }

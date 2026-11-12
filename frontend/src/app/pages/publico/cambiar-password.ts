@@ -37,7 +37,7 @@ import { NotificacionService } from '../../shared/notificaciones';
           <label for="confirmacion">Confirma la nueva contraseña</label>
           <input id="confirmacion" type="password" formControlName="confirmacion" autocomplete="new-password">
           @if (valores().confirmacion && valores().confirmacion !== valores().nueva) {
-            <span class="error">Las contraseñas no coinciden.</span>
+            <span class="error activo">Las contraseñas no coinciden.</span>
           }
         </div>
         @if (error()) {
@@ -57,7 +57,7 @@ import { NotificacionService } from '../../shared/notificaciones';
   styles: [`
     .pagina { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px 16px; }
     form { width: min(440px, 100%); display: flex; flex-direction: column; gap: 14px; padding: 26px; }
-    .icono { width: 52px; height: 52px; border-radius: 16px; background: var(--rojo-suave); color: var(--rojo); display: flex; align-items: center; justify-content: center; }
+    .icono { width: 52px; height: 52px; border-radius: 16px; background: var(--primario-suave); color: var(--primario); display: flex; align-items: center; justify-content: center; }
     h1 { font-size: 22px; font-weight: 800; }
     p { margin: 0; font-size: 14px; }
     .reglas { list-style: none; margin: -4px 0 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 12.5px; color: var(--texto-3); }

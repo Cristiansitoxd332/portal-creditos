@@ -26,6 +26,9 @@ import { Icono } from '../shared/icono';
               @if (item.ruta === '/admin/solicitudes' && pendientes() > 0) {
                 <span class="insignia" [attr.aria-label]="pendientes() + ' pendientes'">{{ pendientes() }}</span>
               }
+              @if (item.ruta === '/admin/mensajes' && avisos() > 0) {
+                <span class="insignia" [attr.aria-label]="avisos() + ' avisos por enviar hoy'">{{ avisos() }}</span>
+              }
             </a>
           }
         </nav>
@@ -63,7 +66,7 @@ import { Icono } from '../shared/icono';
     .lateral.abierto { transform: none; box-shadow: var(--sombra); }
     .velo { position: fixed; inset: 0; z-index: 30; background: rgba(0, 0, 0, 0.35); border: 0; }
     .marca { display: flex; align-items: center; gap: 10px; padding: 0 8px 20px; }
-    .logo { width: 36px; height: 36px; border-radius: 10px; background: var(--rojo); color: #fff; display: flex; align-items: center;
+    .logo { width: 36px; height: 36px; border-radius: 10px; background: var(--primario); color: #fff; display: flex; align-items: center;
       justify-content: center; font-weight: 800; font-size: 19px; }
     .marca-texto { display: flex; flex-direction: column; line-height: 1.15; }
     .marca-texto strong { font-size: 16px; font-weight: 800; }
@@ -72,9 +75,9 @@ import { Icono } from '../shared/icono';
     nav a { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 12px; border-radius: 10px; color: var(--texto-2);
       text-decoration: none; font-weight: 600; font-size: 14px; }
     nav a:hover { background: var(--superficie-2); }
-    nav a.activo { background: var(--rojo-suave); color: var(--rojo-oscuro); font-weight: 700; }
+    nav a.activo { background: var(--primario-suave); color: var(--primario-oscuro); font-weight: 700; }
     .texto { flex: 1; }
-    .insignia { min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: var(--rojo); color: #fff; font-size: 12px;
+    .insignia { min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: var(--primario); color: #fff; font-size: 12px;
       font-weight: 800; display: flex; align-items: center; justify-content: center; }
     .pie-lateral { margin-top: auto; padding-top: 16px; display: flex; flex-direction: column; gap: 4px; }
     .pie-lateral .btn { justify-content: flex-start; font-size: 14px; height: 42px; }
@@ -95,12 +98,15 @@ export class AdminLayout {
   private readonly api = inject(ApiService);
   protected readonly menuAbierto = signal(false);
   protected readonly pendientes = signal(0);
+  /** Avisos de hoy (mora y cuotas que vencen hoy) que aun no se han enviado. */
+  protected readonly avisos = signal(0);
 
   protected readonly menu = [
     { ruta: '/admin', texto: 'Tablero', icono: 'grid', exacto: true },
     { ruta: '/admin/clientes', texto: 'Clientes', icono: 'users', exacto: false },
     { ruta: '/admin/creditos', texto: 'Créditos', icono: 'card', exacto: false },
     { ruta: '/admin/solicitudes', texto: 'Solicitudes', icono: 'doc-check', exacto: false },
+    { ruta: '/admin/mensajes', texto: 'Mensajes', icono: 'bell', exacto: false },
     { ruta: '/admin/importar', texto: 'Importar archivos', icono: 'upload', exacto: false },
     { ruta: '/admin/configuracion', texto: 'Contacto y requisitos', icono: 'settings', exacto: false },
     { ruta: '/admin/auditoria', texto: 'Auditoría', icono: 'shield', exacto: false },
@@ -117,5 +123,9 @@ export class AdminLayout {
 
   private actualizarPendientes(): void {
     this.api.tablero().subscribe({ next: (t) => this.pendientes.set(t.solicitudesPendientes), error: () => {} });
+    this.api.avisosMensajes().subscribe({
+      next: (p) => this.avisos.set([...p.mora, ...p.venceHoy].filter((a) => !a.enviadoHoy).length),
+      error: () => {},
+    });
   }
 }

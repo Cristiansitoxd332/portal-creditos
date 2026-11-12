@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
@@ -49,4 +51,24 @@ public class SolicitudLevantamiento {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "atendida_por")
     private Usuario atendidaPor;
+
+    // ---- pago del tramite (SIMULADO), recaudado en una cuenta exclusiva, separada de las cuotas ----
+    @Column(name = "valor_tramite", precision = 15, scale = 2)
+    private BigDecimal valorTramite;
+
+    @Column(name = "medio_pago_tramite", length = 20)
+    private String medioPagoTramite;
+
+    @Column(name = "referencia_pago_tramite", length = 30)
+    private String referenciaPagoTramite;
+
+    @Column(name = "fecha_pago_tramite")
+    private LocalDateTime fechaPagoTramite;
+
+    @Column(name = "cuenta_recaudo", length = 20)
+    private String cuentaRecaudo;
+
+    /** Ultimo dia de vigencia del documento de levantamiento (se fija al aprobar la solicitud). */
+    @Column(name = "vigente_hasta")
+    private LocalDate vigenteHasta;
 }

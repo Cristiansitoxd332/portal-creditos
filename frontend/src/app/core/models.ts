@@ -257,6 +257,16 @@ export interface SolicitudInfo {
   respuestaAdmin: string | null;
   fechaRespuesta: string | null;
   seguimiento: PasoSeguimiento[];
+  /** Pago SIMULADO del tramite, recaudado en una cuenta exclusiva (separada de las cuotas). */
+  valorTramite: number | null;
+  medioPagoTramite: MedioPagoTramite | null;
+  referenciaPagoTramite: string | null;
+  fechaPagoTramite: string | null;
+  cuentaRecaudo: string | null;
+  /** Vigencia del documento de levantamiento (30 dias desde la aprobacion). */
+  vigenteHasta: string | null;
+  documentoVigente: boolean | null;
+  diasVigencia: number | null;
 }
 
 export interface EstadoLevantamiento {
@@ -267,7 +277,13 @@ export interface EstadoLevantamiento {
   mensaje: string;
   solicitudes: SolicitudInfo[];
   aviso: string;
+  costoTramite: number;
+  vigenciaDias: number;
+  cuentaRecaudo: string;
+  mediosPago: MedioPagoTramite[];
 }
+
+export type MedioPagoTramite = 'PSE' | 'EFECTY' | 'CONSIGNACION';
 
 // ----------------------------------------------------------------- configuracion
 export interface CanalInfo {
@@ -341,6 +357,8 @@ export interface CreditoRequest {
   plazoMeses: number;
   fechaDesembolso: string;
   fechaPrimeraCuota: string | null;
+  /** true = el administrador confirmo que es un crédito adicional (otra moto) para un cliente con crédito activo. */
+  creditoAdicional: boolean;
 }
 
 export interface FilaAmortizacion {
@@ -380,6 +398,9 @@ export interface Tablero {
   solicitudesPendientes: number;
   creditosPorSemaforo: Record<Semaforo, number>;
   pagosUltimosMeses: PagosMes[];
+  recaudoTramites: number;
+  tramitesPagados: number;
+  cuentaRecaudoTramites: string;
 }
 
 export interface RegistroAuditoria {
@@ -422,4 +443,61 @@ export interface ImportacionInfo {
   filasExitosas: number;
   filasConError: number;
   estado: EstadoImportacion;
+}
+
+// ============================================================ mensajes a clientes
+
+export type TipoMensaje = 'VENCE_HOY' | 'RECORDATORIO' | 'MORA' | 'GENERAL';
+
+export interface AvisoSugerido {
+  creditoId: number;
+  numeroCredito: string;
+  clienteId: number;
+  cliente: string;
+  documentoCliente: string;
+  telefono: string | null;
+  placa: string;
+  tipo: TipoMensaje;
+  fechaCuota: string | null;
+  numeroCuota: number;
+  valor: number;
+  diasMora: number;
+  valorMora: number;
+  titulo: string;
+  texto: string;
+  enlaceWhatsapp: string | null;
+  enviadoHoy: boolean;
+}
+
+export interface PanelAvisos {
+  fecha: string;
+  esDiaDeCorte: boolean;
+  proximoCorte: string;
+  venceHoy: AvisoSugerido[];
+  proximos: AvisoSugerido[];
+  mora: AvisoSugerido[];
+}
+
+export interface MensajeInfo {
+  id: number;
+  tipo: TipoMensaje;
+  titulo: string;
+  texto: string;
+  fechaEnvio: string;
+  leido: boolean;
+  fechaLectura: string | null;
+  numeroCredito: string | null;
+  cliente: string;
+  documentoCliente: string;
+}
+
+export interface BandejaCliente {
+  noLeidos: number;
+  mensajes: MensajeInfo[];
+}
+
+export interface ResultadoEnvio {
+  enviados: number;
+  omitidos: number;
+  mensaje: string;
 }

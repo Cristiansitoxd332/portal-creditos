@@ -15,13 +15,18 @@ import com.portalcreditos.repository.CreditoRepository;
 import com.portalcreditos.repository.SolicitudLevantamientoRepository;
 import com.portalcreditos.repository.UsuarioRepository;
 import com.portalcreditos.util.Textos;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -32,7 +37,12 @@ import java.util.Set;
  * - Solo se puede solicitar si el credito esta cancelado y la prenda sigue vigente.
  * - No puede haber dos solicitudes activas (RADICADA o EN_REVISION) para el mismo credito.
  * - Flujo: RADICADA -> EN_REVISION -> APROBADA o RECHAZADA (los estados finales no cambian).
- * - Al radicar, la prenda pasa a EN_TRAMITE; si se aprueba, LEVANTADA; si se rechaza, vuelve a VIGENTE.
+ * - Al radicar, la prenda pasa a EN_TRAMITE; si se aprueba, LEVANTADA; si se rechaza, vuelve a su estado anterior.
+ * - Para radicar, el cliente paga el tramite (app.levantamiento.costo, $30.000) por PSE, Efecty o consignacion.
+ *   Ese dinero se recauda en una CUENTA EXCLUSIVA (app.levantamiento.cuenta-recaudo, 7854) y NO se mezcla
+ *   con los pagos de las cuotas: no crea registros en la tabla pago ni afecta la cartera. Pago SIMULADO.
+ * - Al aprobar, el documento de levantamiento queda vigente app.levantamiento.vigencia-dias (30) dias.
+ *   Si vence sin que el titular haga el tramite ante transito, puede radicar una renovacion (pagando de nuevo).
  *
  * El tramite real lo realiza la entidad por sus canales oficiales; aqui solo se simula el seguimiento.
  */
@@ -50,10 +60,21 @@ public class LevantamientoService {
     private final PazYSalvoService pazYSalvoService;
     private final AuditoriaService auditoria;
     private final Clock reloj;
+    private final BigDecimal costo;
+    private final int vigenciaDias;
+    private final String cuentaRecaudo;
+    private final SecureRandom azar = new SecureRandom();
+    private static final List<String> MEDIOS = List.of("PSE", "EFECTY", "CONSIGNACION");
 
     public LevantamientoService(CreditoRepository creditos, SolicitudLevantamientoRepository solicitudes,
                                 UsuarioRepository usuarios, SituacionCreditoService situacionService,
-                                PazYSalvoService pazYSalvoService, AuditoriaService auditoria, Clock reloj) {
+                                PazYSalvoService pazYSalvoService, AuditoriaService auditoria, Clock reloj,
+                                @Value("${app.levantamiento.costo:30000}") BigDecimal costo,
+                                @Value("${app.levantamiento.vigencia-dias:30}") int vigenciaDias,
+                                @Value("${app.levantamiento.cuenta-recaudo:7854}") String cuentaRecaudo) {
+        this.costo = costo;
+        this.vigenciaDias = vigenciaDias;
+        this.cuentaRecaudo = cuentaRecaudo;
         this.creditos = creditos;
         this.solicitudes = solicitudes;
         this.usuarios = usuarios;
@@ -72,11 +93,13 @@ public class LevantamientoService {
         List<SolicitudInfo> lista = solicitudes.findByCreditoIdOrderByFechaSolicitudDesc(c.getId()).stream()
                 .map(this::info).toList();
         return new EstadoLevantamiento(c.getId(), c.getNumeroCredito(), c.getEstadoPrenda(), motivo == null,
-                motivo == null ? "Puede radicar la solicitud de levantamiento de prenda." : motivo, lista, AVISO);
+                motivo == null ? "Puede radicar la solicitud de levantamiento de prenda." : motivo, lista, AVISO,
+                costo, vigenciaDias, cuentaRecaudo, MEDIOS);
     }
 
     @Transactional
-    public SolicitudInfo solicitar(Long clienteId, Long creditoId, String observacion, String username, String ip) {
+    public SolicitudInfo solicitar(Long clienteId, Long creditoId, String observacion, String medioPago,
+                                   String username, String ip) {
         Credito c = delCliente(clienteId, creditoId);
         String motivo = motivoNoPuedeSolicitar(c);
         if (motivo != null) {
@@ -90,11 +113,18 @@ public class LevantamientoService {
         s.setFechaSolicitud(LocalDateTime.now(reloj));
         s.setEstado(EstadoSolicitud.RADICADA);
         s.setObservacionCliente(Textos.limpiar(observacion));
+        // pago SIMULADO del tramite, a la cuenta exclusiva de recaudo (no entra a la tabla de pagos de cuotas)
+        s.setValorTramite(costo);
+        s.setMedioPagoTramite(MEDIOS.contains(medioPago) ? medioPago : "PSE");
+        s.setReferenciaPagoTramite("LEV-" + LocalDate.now(reloj).toString().replace("-", "") + "-" + codigo());
+        s.setFechaPagoTramite(LocalDateTime.now(reloj));
+        s.setCuentaRecaudo(cuentaRecaudo);
         solicitudes.save(s);
         c.setEstadoPrenda(EstadoPrenda.EN_TRAMITE);
 
         auditoria.registrar(username, "CREAR_SOLICITUD", "solicitud_levantamiento", s.getNumeroRadicado(),
-                "Credito " + c.getNumeroCredito(), ip);
+                "Credito " + c.getNumeroCredito() + " - pago tramite $" + costo.toPlainString() + " ("
+                        + s.getMedioPagoTramite() + ", ref. " + s.getReferenciaPagoTramite() + ", cuenta " + cuentaRecaudo + ")", ip);
         return info(s);
     }
 
@@ -136,7 +166,15 @@ public class LevantamientoService {
         }
         if (nuevo == EstadoSolicitud.APROBADA || nuevo == EstadoSolicitud.RECHAZADA) {
             s.setFechaRespuesta(LocalDateTime.now(reloj));
-            s.getCredito().setEstadoPrenda(nuevo == EstadoSolicitud.APROBADA ? EstadoPrenda.LEVANTADA : EstadoPrenda.VIGENTE);
+            if (nuevo == EstadoSolicitud.APROBADA) {
+                s.getCredito().setEstadoPrenda(EstadoPrenda.LEVANTADA);
+                s.setVigenteHasta(LocalDate.now(reloj).plusDays(vigenciaDias));
+            } else {
+                // si es una renovacion rechazada, la prenda sigue levantada; si no, vuelve a vigente
+                boolean yaLevantada = solicitudes.findByCreditoIdOrderByFechaSolicitudDesc(s.getCredito().getId()).stream()
+                        .anyMatch(o -> o != s && o.getEstado() == EstadoSolicitud.APROBADA);
+                s.getCredito().setEstadoPrenda(yaLevantada ? EstadoPrenda.LEVANTADA : EstadoPrenda.VIGENTE);
+            }
         }
         auditoria.registrar(username, "RESPONDER_SOLICITUD", "solicitud_levantamiento", s.getNumeroRadicado(),
                 actual + " -> " + nuevo, ip);
@@ -151,11 +189,18 @@ public class LevantamientoService {
         if (estado != EstadoCredito.CANCELADO) {
             return "Para solicitar el levantamiento de prenda, el crédito debe estar cancelado en su totalidad.";
         }
-        if (c.getEstadoPrenda() == EstadoPrenda.LEVANTADA) {
-            return "La prenda de este vehículo ya fue levantada.";
-        }
         if (solicitudes.existsByCreditoIdAndEstadoIn(c.getId(), ACTIVAS)) {
             return "Ya tiene una solicitud en trámite para este crédito.";
+        }
+        if (c.getEstadoPrenda() == EstadoPrenda.LEVANTADA) {
+            LocalDate hasta = solicitudes.findByCreditoIdOrderByFechaSolicitudDesc(c.getId()).stream()
+                    .filter(o -> o.getEstado() == EstadoSolicitud.APROBADA && o.getVigenteHasta() != null)
+                    .map(SolicitudLevantamiento::getVigenteHasta).max(LocalDate::compareTo).orElse(null);
+            if (hasta == null || !hasta.isBefore(LocalDate.now(reloj))) {
+                return "La prenda de este vehículo ya fue levantada"
+                        + (hasta == null ? "." : "; el documento está vigente hasta el " + hasta + ".");
+            }
+            // documento vencido: se permite radicar una renovacion
         }
         return null;
     }
@@ -165,18 +210,34 @@ public class LevantamientoService {
         EstadoSolicitud e = s.getEstado();
         boolean finalizada = e == EstadoSolicitud.APROBADA || e == EstadoSolicitud.RECHAZADA;
         String nombreFinal = e == EstadoSolicitud.RECHAZADA ? "Rechazada" : "Aprobada - prenda levantada";
-        List<PasoSeguimiento> pasos = List.of(
-                new PasoSeguimiento("Solicitud radicada", true, s.getFechaSolicitud()),
-                new PasoSeguimiento("En revisión de documentos", e != EstadoSolicitud.RADICADA, null),
-                new PasoSeguimiento(nombreFinal, finalizada, s.getFechaRespuesta()));
+        List<PasoSeguimiento> pasos = new ArrayList<>();
+        if (s.getValorTramite() != null) {
+            pasos.add(new PasoSeguimiento("Pago del trámite ($" + String.format("%,.0f", s.getValorTramite()).replace(',', '.') + ")",
+                    true, s.getFechaPagoTramite()));
+        }
+        pasos.add(new PasoSeguimiento("Solicitud radicada", true, s.getFechaSolicitud()));
+        pasos.add(new PasoSeguimiento("En revisión de documentos", e != EstadoSolicitud.RADICADA, null));
+        pasos.add(new PasoSeguimiento(nombreFinal, finalizada, s.getFechaRespuesta()));
+        LocalDate hoy = LocalDate.now(reloj);
+        Boolean vigente = s.getVigenteHasta() == null ? null : !s.getVigenteHasta().isBefore(hoy);
+        Integer dias = s.getVigenteHasta() == null ? null : (int) Math.max(0, ChronoUnit.DAYS.between(hoy, s.getVigenteHasta()));
         return new SolicitudInfo(s.getId(), s.getNumeroRadicado(), c.getId(), c.getNumeroCredito(),
                 c.getCliente().getNombreCompleto(), c.getCliente().getNumeroDocumento(), c.getVehiculo().getPlaca(),
-                s.getFechaSolicitud(), e, s.getObservacionCliente(), s.getRespuestaAdmin(), s.getFechaRespuesta(), pasos);
+                s.getFechaSolicitud(), e, s.getObservacionCliente(), s.getRespuestaAdmin(), s.getFechaRespuesta(), pasos,
+                s.getValorTramite(), s.getMedioPagoTramite(), s.getReferenciaPagoTramite(), s.getFechaPagoTramite(),
+                s.getCuentaRecaudo(), s.getVigenteHasta(), vigente, dias);
     }
 
     private Credito delCliente(Long clienteId, Long creditoId) {
         return creditos.findByIdAndClienteId(creditoId, clienteId)
                 .orElseThrow(() -> NegocioException.noEncontrado("Credito no encontrado"));
+    }
+
+    private String codigo() {
+        String letras = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        StringBuilder b = new StringBuilder();
+        for (int i = 0; i < 6; i++) b.append(letras.charAt(azar.nextInt(letras.length())));
+        return b.toString();
     }
 
     private String nuevoRadicado() {

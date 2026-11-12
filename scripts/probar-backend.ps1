@@ -119,9 +119,10 @@ Exito "Paz y salvo con QR en PDF (credito cancelado)" ("" + $tam + " bytes")
 Seccion "8. Levantamiento de prenda"
 $lv = ApiGet "/cliente/creditos/3/levantamiento" $cDiana
 Exito "Seguimiento de solicitud de Diana" ($lv.estadoPrenda + " / " + $lv.solicitudes[0].estado)
-$c = CodigoError { ApiSend Post "/cliente/creditos/3/levantamiento" $cDiana @{ observacion = "duplicada" } }
+if ($lv.costoTramite -eq 30000 -and $lv.cuentaRecaudo -eq "7854" -and $lv.solicitudes[0].referenciaPagoTramite) { Exito "Tramite pagado en cuenta exclusiva" ($lv.solicitudes[0].referenciaPagoTramite + " -> cuenta " + $lv.cuentaRecaudo) } else { Falla "Pago del tramite" $lv.costoTramite }
+$c = CodigoError { ApiSend Post "/cliente/creditos/3/levantamiento" $cDiana @{ observacion = "duplicada"; medioPago = "PSE" } }
 if ($c -eq 409) { Exito "No permite dos solicitudes activas" "409" } else { Falla "Solicitud duplicada" $c }
-$c = CodigoError { ApiSend Post "/cliente/creditos/1/levantamiento" $cLaura @{ observacion = "x" } }
+$c = CodigoError { ApiSend Post "/cliente/creditos/1/levantamiento" $cLaura @{ observacion = "x"; medioPago = "PSE" } }
 if ($c -eq 409) { Exito "No permite solicitar con saldo pendiente" "409" } else { Falla "Solicitud con saldo" $c }
 
 Seccion "9. Panel administrativo"
@@ -132,6 +133,7 @@ $r = ApiSend Patch ("/admin/solicitudes/" + $sol.id) $adm @{ estado = "APROBADA"
 if ($r.estado -eq "APROBADA") { Exito "Admin aprueba levantamiento" $r.numeroRadicado } else { Falla "Aprobar solicitud" $r.estado }
 $lv = ApiGet "/cliente/creditos/3/levantamiento" $cDiana
 if ($lv.estadoPrenda -eq "LEVANTADA") { Exito "Diana ve su prenda LEVANTADA" } else { Falla "Prenda levantada" $lv.estadoPrenda }
+if ($lv.solicitudes[0].diasVigencia -eq 30) { Exito "Documento de levantamiento vigente 30 dias" ("hasta " + $lv.solicitudes[0].vigenteHasta) } else { Falla "Vigencia" $lv.solicitudes[0].diasVigencia }
 
 $doc = "88" + (Get-Random -Minimum 10000000 -Maximum 99999999)
 $cred = ApiSend Post "/admin/clientes" $adm @{ tipoDocumento = "CC"; numeroDocumento = $doc; nombres = "Cliente"; apellidos = "De Prueba"; correo = "prueba@correo-ficticio.com"; telefono = "3001234567"; ciudad = "Neiva" }

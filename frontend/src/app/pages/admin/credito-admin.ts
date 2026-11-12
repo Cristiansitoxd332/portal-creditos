@@ -122,7 +122,7 @@ import { FechaPipe, MonedaPipe, NumeroPipe } from '../../shared/pipes';
     .datos span { font-size: 12px; color: var(--texto-3); }
     .datos strong { font-size: 14.5px; }
     .mora { color: var(--mora); }
-    .pago { margin-bottom: 16px; border: 2px solid var(--rojo); display: flex; flex-direction: column; gap: 12px; }
+    .pago { margin-bottom: 16px; border: 2px solid var(--primario); display: flex; flex-direction: column; gap: 12px; }
     .cab { display: flex; justify-content: space-between; align-items: center; }
     h2 { font-size: 16px; font-weight: 800; }
     p { margin: 0; font-size: 13.5px; }
@@ -131,7 +131,7 @@ import { FechaPipe, MonedaPipe, NumeroPipe } from '../../shared/pipes';
     .acciones { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
     .pestanas { display: flex; gap: 4px; border-bottom: 2px solid var(--borde); margin-bottom: 14px; }
     .pestanas button { border: 0; background: none; font: inherit; font-weight: 700; color: var(--texto-3); padding: 10px 16px; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; }
-    .pestanas .activa { color: var(--rojo); border-bottom-color: var(--rojo); }
+    .pestanas .activa { color: var(--primario); border-bottom-color: var(--primario); }
     .sin-relleno { padding: 0; }
     .vencida td { background: var(--mora-fondo); }
     .vacio { text-align: center; color: var(--texto-3); padding: 24px; }

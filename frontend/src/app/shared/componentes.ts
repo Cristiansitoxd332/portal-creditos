@@ -13,8 +13,8 @@ import { NumeroPipe } from './pipes';
   template: `
     <div class="anillo" [style.width.px]="tamano()" [style.height.px]="tamano()">
       <svg [attr.viewBox]="'0 0 120 120'" role="img" [attr.aria-label]="(porcentaje() | numero) + ' % del capital pagado'">
-        <circle cx="60" cy="60" r="52" fill="none" stroke="var(--rojo-suave)" stroke-width="12" />
-        <circle cx="60" cy="60" r="52" fill="none" stroke="var(--rojo)" stroke-width="12" stroke-linecap="round"
+        <circle cx="60" cy="60" r="52" fill="none" stroke="var(--primario-suave)" stroke-width="12" />
+        <circle cx="60" cy="60" r="52" fill="none" stroke="var(--primario)" stroke-width="12" stroke-linecap="round"
                 [attr.stroke-dasharray]="trazo()" transform="rotate(-90 60 60)" class="progreso" />
       </svg>
       <div class="centro">

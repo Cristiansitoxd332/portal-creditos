@@ -18,6 +18,7 @@ SET NAMES utf8mb4;
 -- Limpieza (permite volver a ejecutar el script desde cero)
 -- ---------------------------------------------------------------------
 SET FOREIGN_KEY_CHECKS = 0;
+DROP TABLE IF EXISTS mensaje_cliente;
 DROP TABLE IF EXISTS auditoria;
 DROP TABLE IF EXISTS importacion_error;
 DROP TABLE IF EXISTS importacion;
@@ -253,6 +254,12 @@ CREATE TABLE solicitud_levantamiento (
     respuesta_admin      VARCHAR(500)  NULL,
     fecha_respuesta      DATETIME      NULL,
     atendida_por         BIGINT        NULL,
+    valor_tramite        DECIMAL(15, 2) NULL COMMENT 'Costo del tramite pagado (simulado)',
+    medio_pago_tramite   VARCHAR(20)   NULL COMMENT 'PSE, EFECTY o CONSIGNACION',
+    referencia_pago_tramite VARCHAR(30) NULL,
+    fecha_pago_tramite   DATETIME      NULL,
+    cuenta_recaudo       VARCHAR(20)   NULL COMMENT 'Cuenta exclusiva de recaudo de tramites (no se mezcla con cuotas)',
+    vigente_hasta        DATE          NULL COMMENT 'Vigencia del documento de levantamiento (30 dias desde la aprobacion)',
     CONSTRAINT pk_solicitud_levantamiento PRIMARY KEY (id),
     CONSTRAINT uk_solicitud_radicado UNIQUE (numero_radicado),
     CONSTRAINT fk_solicitud_credito FOREIGN KEY (credito_id) REFERENCES credito (id),
@@ -327,5 +334,30 @@ CREATE TABLE auditoria (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
 
 CREATE INDEX ix_auditoria_fecha ON auditoria (fecha);
+
+-- =====================================================================
+-- 15. MENSAJE_CLIENTE: recordatorios de pago y avisos de mora que la
+--     entidad envia al cliente desde el panel administrativo. El cliente
+--     los ve en su portal (seccion "Mensajes").
+-- =====================================================================
+CREATE TABLE mensaje_cliente (
+    id             BIGINT        NOT NULL AUTO_INCREMENT,
+    cliente_id     BIGINT        NOT NULL,
+    credito_id     BIGINT        NULL,
+    tipo           VARCHAR(20)   NOT NULL,
+    titulo         VARCHAR(120)  NOT NULL,
+    texto          VARCHAR(700)  NOT NULL,
+    fecha_envio    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    enviado_por    VARCHAR(50)   NOT NULL,
+    leido          BOOLEAN       NOT NULL DEFAULT FALSE,
+    fecha_lectura  DATETIME      NULL,
+    CONSTRAINT pk_mensaje_cliente PRIMARY KEY (id),
+    CONSTRAINT fk_mensaje_cliente FOREIGN KEY (cliente_id) REFERENCES cliente (id),
+    CONSTRAINT fk_mensaje_credito FOREIGN KEY (credito_id) REFERENCES credito (id),
+    CONSTRAINT ck_mensaje_tipo CHECK (tipo IN ('VENCE_HOY', 'RECORDATORIO', 'MORA', 'GENERAL'))
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+
+CREATE INDEX ix_mensaje_cliente ON mensaje_cliente (cliente_id, fecha_envio);
+CREATE INDEX ix_mensaje_credito_tipo ON mensaje_cliente (credito_id, tipo, fecha_envio);
 
 -- Fin del script 01
