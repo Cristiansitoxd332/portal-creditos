@@ -40,6 +40,10 @@ public class Pago {
     @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal valor;
 
+    /** Parte del pago que se aplico a la mora por dias de atraso (el resto va a las cuotas). */
+    @Column(name = "valor_mora", nullable = false, precision = 15, scale = 2)
+    private BigDecimal valorMora = BigDecimal.ZERO;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "medio_pago", nullable = false, length = 30)
     private MedioPago medioPago;

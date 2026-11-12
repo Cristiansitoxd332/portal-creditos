@@ -40,7 +40,8 @@ import java.util.stream.Collectors;
  * 1. Se bloquea el credito en la base de datos (evita pagos simultaneos sobre las mismas cuotas).
  * 2. Se valida el valor y el medio de pago.
  * 3. Se envia a la pasarela a traves de la interfaz PasarelaPago (patron Adaptador).
- * 4. Si se aprueba: se aplica a las cuotas mas antiguas y se recalculan saldo y estado del credito.
+ * 4. Si se aprueba: se cubre primero la mora por dias de atraso, luego las cuotas mas antiguas,
+ *    y se recalculan saldo y estado del credito.
  * 5. Se guarda el pago (aprobado o rechazado), se registra en auditoria y se devuelve el comprobante.
  * Todo ocurre en una sola transaccion: o se guarda completo, o no se guarda nada.
  */
@@ -58,6 +59,7 @@ public class PagoService {
     private final UsuarioRepository usuarios;
     private final DistribuidorPagos distribuidor;
     private final SituacionCreditoService situacionService;
+    private final CalculadoraMora mora;
     private final PasarelaPago pasarela;
     private final AuditoriaService auditoria;
     private final Clock reloj;
@@ -65,12 +67,13 @@ public class PagoService {
 
     public PagoService(CreditoRepository creditos, PagoRepository pagos, UsuarioRepository usuarios,
                        DistribuidorPagos distribuidor, SituacionCreditoService situacionService,
-                       PasarelaPago pasarela, AuditoriaService auditoria, Clock reloj) {
+                       CalculadoraMora mora, PasarelaPago pasarela, AuditoriaService auditoria, Clock reloj) {
         this.creditos = creditos;
         this.pagos = pagos;
         this.usuarios = usuarios;
         this.distribuidor = distribuidor;
         this.situacionService = situacionService;
+        this.mora = mora;
         this.pasarela = pasarela;
         this.auditoria = auditoria;
         this.reloj = reloj;
@@ -161,9 +164,12 @@ public class PagoService {
                 .orElseThrow(() -> NegocioException.noEncontrado("Credito no encontrado"));
         List<Cuota> cuotas = credito.getCuotas();
         BigDecimal valor = solicitud.valor().setScale(2, RoundingMode.HALF_UP);
-        BigDecimal pendiente = distribuidor.totalPendiente(cuotas);
+        LocalDate fecha = LocalDate.now(reloj);
+        BigDecimal moraPendiente = mora.moraPendiente(credito, cuotas, fecha);
+        BigDecimal pendienteCuotas = distribuidor.totalPendiente(cuotas);
+        BigDecimal pendiente = pendienteCuotas.add(moraPendiente);
 
-        if (credito.getEstado() == EstadoCredito.CANCELADO || pendiente.signum() == 0) {
+        if (credito.getEstado() == EstadoCredito.CANCELADO || pendienteCuotas.signum() == 0) {
             throw NegocioException.solicitudInvalida("El credito ya esta cancelado; no tiene saldo pendiente.");
         }
         if (valor.compareTo(pendiente) > 0) {
@@ -196,7 +202,13 @@ public class PagoService {
 
         if (resultado.aprobado()) {
             LocalDate hoy = ahora.toLocalDate();
-            List<DistribuidorPagos.Aplicacion> distribucion = distribuidor.distribuir(cuotas, valor, hoy);
+            // 1) primero se cubre la mora por dias de atraso; 2) el resto se aplica a las cuotas
+            BigDecimal aMora = valor.min(moraPendiente);
+            mora.registrarPago(credito, cuotas, aMora, hoy);
+            pago.setValorMora(aMora);
+            BigDecimal aCuotas = valor.subtract(aMora);
+            List<DistribuidorPagos.Aplicacion> distribucion = aCuotas.signum() > 0
+                    ? distribuidor.distribuir(cuotas, aCuotas, hoy) : List.of();
             for (DistribuidorPagos.Aplicacion d : distribucion) {
                 AplicacionPago ap = new AplicacionPago();
                 ap.setPago(pago);
@@ -233,9 +245,12 @@ public class PagoService {
         LocalDate hoy = LocalDate.now(reloj);
         List<Cuota> cuotas = credito.getCuotas();
         SituacionCreditoService.Situacion s = situacionService.evaluar(credito, cuotas, hoy);
-        BigDecimal pendiente = distribuidor.totalPendiente(cuotas);
-        BigDecimal hastaProxima = s.valorVencido().add(s.proximaCuota() == null ? BigDecimal.ZERO : s.proximaCuota().getSaldoPendiente());
+        BigDecimal valorMora = mora.moraPendiente(credito, cuotas, hoy);
+        BigDecimal pendiente = distribuidor.totalPendiente(cuotas).add(valorMora);
+        BigDecimal hastaProxima = s.valorVencido().add(valorMora)
+                .add(s.proximaCuota() == null ? BigDecimal.ZERO : s.proximaCuota().getSaldoPendiente());
         return new OpcionesPago(credito.getId(), credito.getNumeroCredito(), s.valorVencido(), s.cuotasVencidas(),
+                valorMora, mora.diasPorCobrar(credito, cuotas, hoy), mora.valorDia(),
                 hastaProxima, VALOR_MINIMO.min(pendiente), pendiente, medios, AVISO);
     }
 
@@ -244,7 +259,7 @@ public class PagoService {
         Credito c = p.getCredito();
         return new Comprobante(p.getId(), p.getReferencia(), codigoAutorizacion(p), p.getFechaPago(),
                 c.getNumeroCredito(), c.getCliente().getNombreCompleto(), c.getCliente().getNumeroDocumento(),
-                p.getValor(), p.getMedioPago(), p.getCanal(), p.getEstado(), mensaje, pasarela.nombre(),
+                p.getValor(), p.getValorMora(), p.getMedioPago(), p.getCanal(), p.getEstado(), mensaje, pasarela.nombre(),
                 saldoAnterior, saldoNuevo, c.getEstado(), aplicaciones, AVISO);
     }
 

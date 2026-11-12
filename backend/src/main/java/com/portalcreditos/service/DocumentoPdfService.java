@@ -166,6 +166,10 @@ public class DocumentoPdfService {
         fila(datos, "Medio de pago", String.valueOf(c.medioPago()).replace('_', ' '));
         fila(datos, "Canal", String.valueOf(c.canal()));
         fila(datos, "Procesado por", c.pasarela());
+        if (c.valorMora() != null && c.valorMora().signum() > 0) {
+            fila(datos, "Mora por días de atraso", pesos(c.valorMora()));
+            fila(datos, "Aplicado a cuotas", pesos(c.valor().subtract(c.valorMora())));
+        }
         if (c.saldoCapitalAnterior() != null && c.saldoCapitalNuevo() != null) {
             fila(datos, "Saldo de capital anterior", pesos(c.saldoCapitalAnterior()));
             fila(datos, "Saldo de capital actual", pesos(c.saldoCapitalNuevo()));

@@ -47,6 +47,8 @@ public final class CreditoDtos {
             int cuotasVencidas,
             BigDecimal valorVencido,
             int diasMora,
+            BigDecimal valorMora,
+            BigDecimal moraPorDia,
             BigDecimal porcentajePagado,
             ProximaCuota proximaCuota
     ) {

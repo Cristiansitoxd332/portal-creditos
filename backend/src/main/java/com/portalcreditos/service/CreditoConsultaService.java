@@ -33,11 +33,14 @@ public class CreditoConsultaService {
 
     private final CreditoRepository creditos;
     private final SituacionCreditoService situacionService;
+    private final CalculadoraMora mora;
     private final Clock reloj;
 
-    public CreditoConsultaService(CreditoRepository creditos, SituacionCreditoService situacionService, Clock reloj) {
+    public CreditoConsultaService(CreditoRepository creditos, SituacionCreditoService situacionService,
+                                  CalculadoraMora mora, Clock reloj) {
         this.creditos = creditos;
         this.situacionService = situacionService;
+        this.mora = mora;
         this.reloj = reloj;
     }
 
@@ -93,7 +96,8 @@ public class CreditoConsultaService {
                 c.getValorFinanciado(), c.getPlazoMeses(), c.getTasaInteresMensual(), c.getValorCuota(),
                 c.getSaldoCapital(), s.estado(), s.semaforo(), c.getEstadoPrenda(),
                 s.cuotasPagadas(), s.cuotasPendientes(), s.cuotasVencidas(),
-                s.valorVencido(), s.diasMora(), s.porcentajePagado(), proxima);
+                s.valorVencido(), s.diasMora(), mora.moraPendiente(c, c.getCuotas(), hoy), mora.valorDia(),
+                s.porcentajePagado(), proxima);
     }
 
     private CreditoDetalle detalle(Credito c, LocalDate hoy) {

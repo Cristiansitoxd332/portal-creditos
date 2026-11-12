@@ -38,6 +38,7 @@ import { FechaPipe, MonedaPipe, NumeroPipe } from '../../shared/pipes';
           <div><span>Plazo / tasa</span><strong>{{ d.resumen.plazoMeses }} m · {{ d.resumen.tasaInteresMensual | numero }} %</strong></div>
           <div><span>Cuotas pagadas</span><strong>{{ d.resumen.cuotasPagadas }} de {{ d.resumen.plazoMeses }}</strong></div>
           <div><span>Valor vencido</span><strong [class.mora]="d.resumen.valorVencido > 0">{{ d.resumen.valorVencido | moneda }}</strong></div>
+          <div><span>Mora ({{ d.resumen.moraPorDia | moneda }}/día)</span><strong [class.mora]="d.resumen.valorMora > 0">{{ d.resumen.valorMora | moneda }}</strong></div>
           <div><span>Vehículo</span><strong>{{ d.resumen.vehiculo }} · {{ d.resumen.placa }}</strong></div>
           <div><span>Desembolso</span><strong>{{ d.fechaDesembolso | fecha }}</strong></div>
           <div><span>Prenda</span><strong>{{ d.resumen.estadoPrenda === 'LEVANTADA' ? 'Levantada' : d.resumen.estadoPrenda === 'EN_TRAMITE' ? 'En trámite' : 'Vigente' }}</strong></div>
@@ -49,6 +50,7 @@ import { FechaPipe, MonedaPipe, NumeroPipe } from '../../shared/pipes';
           <div class="cab"><h2>Registrar pago recibido</h2>
             <button type="button" class="btn btn-fantasma btn-icono" (click)="formPago.set(null)" aria-label="Cerrar"><app-icono nombre="x" [tamano]="18" /></button></div>
           <p class="texto-suave">Para pagos recibidos en oficina, transferencia o consignación. Vencido: <strong>{{ o.valorVencido | moneda }}</strong> ·
+            Mora: <strong>{{ o.valorMora | moneda }}</strong> ({{ o.diasMoraCobrados }} días) ·
             Hasta próxima cuota: <strong>{{ o.valorHastaProximaCuota | moneda }}</strong> · Máximo (saldo total): <strong>{{ o.valorMaximo | moneda }}</strong></p>
           <form class="rejilla-form" (ngSubmit)="registrar()">
             <div class="campo"><label for="va">Valor</label><input id="va" name="va" type="number" [(ngModel)]="valorPago" [min]="o.valorMinimo" [max]="o.valorMaximo" required></div>
@@ -56,7 +58,7 @@ import { FechaPipe, MonedaPipe, NumeroPipe } from '../../shared/pipes';
               <select id="me" name="me" [(ngModel)]="medioPago">@for (m of mediosAdmin; track m) { <option [value]="m">{{ textoMedio[m] }}</option> }</select></div>
             <div class="campo ancho"><label for="ob">Observación</label><input id="ob" name="ob" [(ngModel)]="observacion" maxlength="250" placeholder="Ej. Recibo de caja 0045"></div>
             <div class="acciones">
-              <button type="button" class="btn btn-secundario" (click)="valorPago = o.valorVencido || o.valorHastaProximaCuota">Usar valor sugerido</button>
+              <button type="button" class="btn btn-secundario" (click)="valorPago = o.valorVencido > 0 ? o.valorVencido + o.valorMora : o.valorHastaProximaCuota">Usar valor sugerido</button>
               <button type="submit" class="btn btn-primario" [disabled]="registrando() || !valorPago">{{ registrando() ? 'Registrando…' : 'Registrar pago' }}</button>
             </div>
           </form>
@@ -166,7 +168,7 @@ export class CreditoAdmin {
 
   protected abrirPago(): void {
     this.api.opcionesPagoAdmin(Number(this.id())).subscribe({
-      next: (o) => { this.formPago.set(o); this.valorPago = o.valorVencido || o.valorHastaProximaCuota; this.observacion = ''; },
+      next: (o) => { this.formPago.set(o); this.valorPago = o.valorVencido > 0 ? o.valorVencido + o.valorMora : o.valorHastaProximaCuota; this.observacion = ''; },
       error: (e) => this.notificaciones.error(mensajeError(e)),
     });
   }

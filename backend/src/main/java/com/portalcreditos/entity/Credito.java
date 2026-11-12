@@ -79,6 +79,10 @@ public class Credito {
     @Column(name = "fecha_cancelacion")
     private LocalDate fechaCancelacion;
 
+    /** Fecha hasta la cual la mora diaria ya fue pagada (null si nunca se ha cobrado mora). */
+    @Column(name = "mora_cubierta_hasta")
+    private LocalDate moraCubiertaHasta;
+
     /** Plan de pagos ordenado por numero de cuota. */
     @OneToMany(mappedBy = "credito", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("numeroCuota ASC")

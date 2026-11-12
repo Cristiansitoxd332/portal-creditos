@@ -42,7 +42,7 @@ export class Pagar {
       return 0;
     }
     switch (this.opcion()) {
-      case 'vencido': return o.valorVencido;
+      case 'vencido': return o.valorVencido + o.valorMora;
       case 'proxima': return o.valorHastaProximaCuota;
       case 'total': return o.valorMaximo;
       case 'otro': return this.otroValor() ?? 0;

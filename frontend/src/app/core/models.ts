@@ -74,6 +74,9 @@ export interface CreditoResumen {
   cuotasVencidas: number;
   valorVencido: number;
   diasMora: number;
+  /** Mora por dias de atraso pendiente de pago (valor fijo por dia). */
+  valorMora: number;
+  moraPorDia: number;
   porcentajePagado: number;
   proximaCuota: ProximaCuota | null;
 }
@@ -135,6 +138,9 @@ export interface OpcionesPago {
   numeroCredito: string;
   valorVencido: number;
   cuotasVencidas: number;
+  valorMora: number;
+  diasMoraCobrados: number;
+  moraPorDia: number;
   valorHastaProximaCuota: number;
   valorMinimo: number;
   valorMaximo: number;
@@ -164,6 +170,7 @@ export interface Comprobante {
   cliente: string;
   documentoCliente: string;
   valor: number;
+  valorMora: number;
   medioPago: MedioPago;
   canal: CanalPago;
   estado: EstadoPago;

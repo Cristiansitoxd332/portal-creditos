@@ -46,7 +46,7 @@
             <app-icono nombre="alert" />
             <div>
               <strong>Tienes {{ c.cuotasVencidas }} {{ c.cuotasVencidas === 1 ? 'cuota vencida' : 'cuotas vencidas' }} · {{ c.diasMora }} días de mora</strong>
-              <span>Valor vencido: {{ c.valorVencido | moneda }}</span>
+              <span>Valor vencido: {{ c.valorVencido | moneda }}@if (c.valorMora > 0) { + mora {{ c.valorMora | moneda }} ({{ c.moraPorDia | moneda }} por día)}</span>
             </div>
           </div>
         }

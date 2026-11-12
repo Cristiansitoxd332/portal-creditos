@@ -79,7 +79,7 @@ const COLOR_SEMAFORO: Record<Semaforo, string> = {
         <div class="cab"><h2>Créditos que requieren atención</h2><a routerLink="/admin/creditos">Ver todos</a></div>
         <div class="tabla-caja">
           <table class="tabla">
-            <thead><tr><th>Crédito</th><th>Cliente</th><th>Estado</th><th class="num">Vencido</th><th class="num">Días mora</th></tr></thead>
+            <thead><tr><th>Crédito</th><th>Cliente</th><th>Estado</th><th class="num">Vencido</th><th class="num">Mora</th><th class="num">Días mora</th></tr></thead>
             <tbody>
               @for (c of atencion(); track c.id) {
                 <tr class="clic" [routerLink]="['/admin/creditos', c.id]">
@@ -87,10 +87,11 @@ const COLOR_SEMAFORO: Record<Semaforo, string> = {
                   <td>{{ c.cliente }}</td>
                   <td><app-chip-semaforo [estado]="c.semaforo" /></td>
                   <td class="num">{{ c.valorVencido | moneda }}</td>
+                  <td class="num">{{ c.valorMora | moneda }}</td>
                   <td class="num">{{ c.diasMora }}</td>
                 </tr>
               } @empty {
-                <tr><td colspan="5" class="vacio">Todos los créditos están al día.</td></tr>
+                <tr><td colspan="6" class="vacio">Todos los créditos están al día.</td></tr>
               }
             </tbody>
           </table>

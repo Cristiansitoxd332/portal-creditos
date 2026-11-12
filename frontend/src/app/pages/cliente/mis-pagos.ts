@@ -31,7 +31,7 @@ interface Grupo {
             </header>
             @if (g.credito.estado !== 'CANCELADO') {
               <a class="btn btn-primario btn-bloque" [routerLink]="['/cliente/creditos', g.credito.id, 'pagar']">
-                <app-icono nombre="money" [tamano]="18" />{{ g.credito.estado === 'EN_MORA' ? 'Ponerme al día · ' : 'Pagar · ' }}{{ (g.credito.estado === 'EN_MORA' ? g.credito.valorVencido : g.credito.proximaCuota?.valor) | moneda }}
+                <app-icono nombre="money" [tamano]="18" />{{ g.credito.estado === 'EN_MORA' ? 'Ponerme al día · ' : 'Pagar · ' }}{{ (g.credito.estado === 'EN_MORA' ? g.credito.valorVencido + g.credito.valorMora : g.credito.proximaCuota?.valor) | moneda }}
               </a>
             }
             <ul class="pagos">

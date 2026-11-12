@@ -22,7 +22,7 @@
   @if (d.resumen.estado === 'EN_MORA') {
     <div class="aviso aviso-mora mora">
       <app-icono nombre="alert" />
-      <span><strong>{{ d.resumen.cuotasVencidas }} cuotas vencidas</strong> por {{ d.resumen.valorVencido | moneda }} · {{ d.resumen.diasMora }} días de mora.</span>
+      <span><strong>{{ d.resumen.cuotasVencidas }} cuotas vencidas</strong> por {{ d.resumen.valorVencido | moneda }} · {{ d.resumen.diasMora }} días de mora@if (d.resumen.valorMora > 0) {. Mora acumulada: <strong>{{ d.resumen.valorMora | moneda }}</strong> ({{ d.resumen.moraPorDia | moneda }} por día)}.</span>
     </div>
   }
 

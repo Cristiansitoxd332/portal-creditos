@@ -14,6 +14,9 @@
       <div><dt>Fecha</dt><dd>{{ c.fecha | fecha: 'hora' }}</dd></div>
       <div><dt>Medio</dt><dd>{{ textoMedio[c.medioPago] }}</dd></div>
       <div><dt>Crédito</dt><dd>{{ c.numeroCredito }}</dd></div>
+      @if (c.valorMora > 0) {
+        <div><dt>Mora por días de atraso</dt><dd>{{ c.valorMora | moneda }}</dd></div>
+      }
       @if (c.saldoCapitalNuevo !== null && c.estado === 'APROBADO') {
         <div><dt>Nuevo saldo de capital</dt><dd>{{ c.saldoCapitalNuevo | moneda }}</dd></div>
       }
@@ -46,11 +49,18 @@
   <div class="pasos">
     <section class="tarjeta">
       <h2>1. ¿Cuánto quieres pagar?</h2>
+      @if (o.valorMora > 0) {
+        <div class="aviso aviso-mora desglose-mora" role="note">
+          <app-icono nombre="alert" [tamano]="18" />
+          <span>Tienes <strong>{{ o.valorMora | moneda }}</strong> de mora ({{ o.diasMoraCobrados }} días × {{ o.moraPorDia | moneda }} por día).
+            Tu pago cubre primero la mora y luego las cuotas.</span>
+        </div>
+      }
       <div class="opciones" role="radiogroup" aria-label="Valor a pagar">
         @if (o.valorVencido > 0) {
           <button type="button" role="radio" class="opcion" [class.activa]="opcion() === 'vencido'" [attr.aria-checked]="opcion() === 'vencido'" (click)="opcion.set('vencido')">
-            <span><strong>Ponerme al día</strong><small>{{ o.cuotasVencidas }} {{ o.cuotasVencidas === 1 ? 'cuota vencida' : 'cuotas vencidas' }}</small></span>
-            <b>{{ o.valorVencido | moneda }}</b>
+            <span><strong>Ponerme al día</strong><small>{{ o.cuotasVencidas }} {{ o.cuotasVencidas === 1 ? 'cuota vencida' : 'cuotas vencidas' }}@if (o.valorMora > 0) { + mora}</small></span>
+            <b>{{ o.valorVencido + o.valorMora | moneda }}</b>
           </button>
         }
         <button type="button" role="radio" class="opcion" [class.activa]="opcion() === 'proxima'" [attr.aria-checked]="opcion() === 'proxima'" (click)="opcion.set('proxima')">

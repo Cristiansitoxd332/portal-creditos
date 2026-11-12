@@ -86,11 +86,13 @@ $plan = ApiGet "/cliente/creditos/2/cuotas" $cAndres
 Exito "Plan de pagos" ("" + $plan.totalCuotas + " cuotas, " + $plan.cuotasVencidas + " vencidas")
 
 Seccion "5. Pagos simulados"
-$op = ApiGet "/cliente/creditos/2/pagos/opciones" $cAndres; Exito "Opciones de pago" ("vencido $" + $op.valorVencido)
+$op = ApiGet "/cliente/creditos/2/pagos/opciones" $cAndres; Exito "Opciones de pago" ("vencido $" + $op.valorVencido + " + mora $" + $op.valorMora)
+if ($op.valorMora -eq ($op.diasMoraCobrados * $op.moraPorDia) -and $op.valorMora -gt 0) { Exito "Mora diaria calculada" ("" + $op.diasMoraCobrados + " dias x $" + $op.moraPorDia) } else { Falla "Mora diaria" $op.valorMora }
 $r = ApiSend Post "/cliente/creditos/2/pagos" $cAndres @{ valor = 2100403; medioPago = "TARJETA_SIMULADA"; simularRechazo = $true }
 if ($r.estado -eq "RECHAZADO") { Exito "Pago rechazado (simulado)" $r.referencia } else { Falla "Pago rechazado" $r.estado }
-$r = ApiSend Post "/cliente/creditos/2/pagos" $cAndres @{ valor = $op.valorVencido; medioPago = "PSE_SIMULADO" }
+$r = ApiSend Post "/cliente/creditos/2/pagos" $cAndres @{ valor = ($op.valorVencido + $op.valorMora); medioPago = "PSE_SIMULADO" }
 if ($r.estado -eq "APROBADO") { Exito "Pago aprobado de lo vencido" ($r.referencia + " " + $r.codigoAutorizacion) } else { Falla "Pago aprobado" $r.estado }
+if ($r.valorMora -eq $op.valorMora) { Exito "El pago cubrio primero la mora" ("$" + $r.valorMora) } else { Falla "Mora en el pago" $r.valorMora }
 $m = (ApiGet "/cliente/creditos" $cAndres)[0]
 if ($m.semaforo -eq "AL_DIA") { Exito "El credito paso de EN_MORA a AL_DIA" } else { Falla "Estado despues del pago" $m.semaforo }
 $c = CodigoError { ApiSend Post "/cliente/creditos/2/pagos" $cAndres @{ valor = 999999999; medioPago = "PSE_SIMULADO" } }
