@@ -100,6 +100,11 @@ public class CreditoConsultaService {
                 s.porcentajePagado(), proxima);
     }
 
+    /** Resumen de un credito con la situacion de HOY (para otros servicios). */
+    public CreditoResumen resumenDe(Credito c) {
+        return resumen(c, hoy());
+    }
+
     private CreditoDetalle detalle(Credito c, LocalDate hoy) {
         SituacionCreditoService.Situacion s = situacionService.evaluar(c, c.getCuotas(), hoy);
         Vehiculo v = c.getVehiculo();
@@ -110,14 +115,24 @@ public class CreditoConsultaService {
 
         return new CreditoDetalle(resumen(c, hoy), c.getValorVehiculo(), c.getCuotaInicial(),
                 c.getFechaDesembolso(), c.getFechaPrimeraCuota(), c.getFechaCancelacion(),
-                s.capitalPagado(), s.interesesPagados(), s.totalPagado(), totalIntereses, totalPagar, vehiculo);
+                s.capitalPagado(), s.interesesPagados(), s.totalPagado(), totalIntereses, totalPagar, vehiculo,
+                codeudorInfo(c.getCodeudor()), c.getAsesor(), c.getCuotaOficial(), c.getSeguroVidaCuota(), c.getFogadeCuota());
+    }
+
+    /** Datos del codeudor para mostrar (o null si el credito no tiene). */
+    public static com.portalcreditos.dto.credito.CreditoDtos.CodeudorInfo codeudorInfo(com.portalcreditos.entity.Codeudor cd) {
+        if (cd == null) {
+            return null;
+        }
+        return new com.portalcreditos.dto.credito.CreditoDtos.CodeudorInfo(cd.getTipoDocumento().name(), cd.getNumeroDocumento(),
+                cd.getNombreCompleto(), cd.getTelefono(), cd.getCorreo(), cd.getDireccion());
     }
 
     private PlanPagos plan(Credito c, LocalDate hoy) {
         SituacionCreditoService.Situacion s = situacionService.evaluar(c, c.getCuotas(), hoy);
         List<CuotaInfo> filas = c.getCuotas().stream()
                 .map(q -> new CuotaInfo(q.getNumeroCuota(), q.getFechaVencimiento(), q.getValorCapital(),
-                        q.getValorInteres(), q.getValorCuota(), q.getSaldoCapitalFinal(), q.getValorPagado(),
+                        q.getValorInteres(), q.getValorSeguroVida(), q.getValorFogade(), q.getValorCuota(), q.getSaldoCapitalFinal(), q.getValorPagado(),
                         q.getSaldoPendiente(), q.getFechaPago(),
                         situacionService.estadoVisible(q, hoy), situacionService.diasMora(q, hoy)))
                 .toList();

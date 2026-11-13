@@ -174,7 +174,11 @@ public class MensajeService {
                     c.getCliente().getTelefono(), r.placa(), tipo, fechaCuota,
                     r.proximaCuota() == null ? 0 : r.proximaCuota().numeroCuota(),
                     tipo == TipoMensaje.MORA ? r.valorVencido() : (r.proximaCuota() == null ? BigDecimal.ZERO : r.proximaCuota().valor()),
-                    r.diasMora(), r.valorMora(), titulo(tipo), texto, enlaceWhatsapp(c.getCliente().getTelefono(), texto), enviadoHoy));
+                    r.diasMora(), r.valorMora(), titulo(tipo), texto, enlaceWhatsapp(c.getCliente().getTelefono(), texto), enviadoHoy,
+                    c.getCodeudor() == null ? null : c.getCodeudor().getNombreCompleto(),
+                    c.getCodeudor() == null ? null : c.getCodeudor().getTelefono(),
+                    c.getCodeudor() == null || tipo != TipoMensaje.MORA ? null
+                            : enlaceWhatsapp(c.getCodeudor().getTelefono(), textoCodeudor(c, r))));
         }
         lista.sort(Comparator.comparing(AvisoSugerido::diasMora).reversed().thenComparing(AvisoSugerido::cliente));
         return lista;
@@ -219,14 +223,20 @@ public class MensajeService {
                         + " de su crédito " + credito + " por " + pesos(r.proximaCuota().valor())
                         + ". Recuerde que las fechas de pago son los días 5 y 20 de cada mes.";
             }
-            case MORA -> "Hola " + nombre + ", su crédito " + credito + " se encuentra en mora: "
-                    + r.cuotasVencidas() + (r.cuotasVencidas() == 1 ? " cuota vencida" : " cuotas vencidas") + ", "
-                    + r.diasMora() + (r.diasMora() == 1 ? " día" : " días") + " de atraso, valor vencido de "
-                    + pesos(r.valorVencido()) + " y mora de " + pesos(r.valorMora()) + " (" + pesos(r.moraPorDia())
-                    + " por cada día). Le invitamos a ponerse al día y pagar en las fechas establecidas (días 5 y 20) "
-                    + "para evitar reportes. Línea de atención y WhatsApp: " + lineaAtencion + ".";
+            // Sin cifras: el aviso solo informa que hay cuotas vencidas (el detalle lo ve el cliente en su portal).
+            case MORA -> "Hola " + nombre + ", Rentar Inversiones le informa que su crédito " + credito
+                    + " tiene cuotas vencidas y se encuentra en mora. Le invitamos a ponerse al día y pagar en las fechas "
+                    + "establecidas (días 5 y 20) para evitar reportes. Línea de atención y WhatsApp: " + lineaAtencion + ".";
             case GENERAL -> "Hola " + nombre + ", ";
         };
+    }
+
+    /** Aviso al codeudor cuando el credito que respalda esta en mora. */
+    String textoCodeudor(Credito c, CreditoResumen r) {
+        return "Hola " + primerNombre(c.getCodeudor().getNombres()) + ", Rentar Inversiones le informa, como codeudor, que el crédito "
+                + r.numeroCredito() + " de " + r.cliente() + " (moto " + r.placa() + ") tiene cuotas vencidas y se encuentra "
+                + "en mora. Le agradecemos apoyar al titular para ponerse al día y evitar reportes. "
+                + "Línea de atención y WhatsApp: " + lineaAtencion + ".";
     }
 
     // ================================================================== utilidades

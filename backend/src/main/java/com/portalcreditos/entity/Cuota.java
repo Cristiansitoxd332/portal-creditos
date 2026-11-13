@@ -29,6 +29,14 @@ public class Cuota {
     @Column(name = "numero_cuota", nullable = false)
     private Integer numeroCuota;
 
+    /** Seguro de vida de esta cuota (se paga antes que el interes). */
+    @Column(name = "valor_seguro_vida", nullable = false, precision = 15, scale = 2)
+    private BigDecimal valorSeguroVida = BigDecimal.ZERO;
+
+    /** FOGADE de esta cuota (se paga despues del seguro de vida y antes que el interes). */
+    @Column(name = "valor_fogade", nullable = false, precision = 15, scale = 2)
+    private BigDecimal valorFogade = BigDecimal.ZERO;
+
     @Column(name = "fecha_vencimiento", nullable = false)
     private LocalDate fechaVencimiento;
 
@@ -53,6 +61,24 @@ public class Cuota {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private EstadoCuota estado = EstadoCuota.PENDIENTE;
+
+    /** Seguro de vida + FOGADE de la cuota. */
+    public BigDecimal getValorSeguros() {
+        return valorSeguroVida.add(valorFogade);
+    }
+
+    /**
+     * Capital ya cubierto en esta cuota. Orden dentro de la cuota: seguro de vida, FOGADE, interes y capital.
+     */
+    public BigDecimal getCapitalCubierto() {
+        return valorPagado.subtract(getValorSeguros()).subtract(valorInteres)
+                .max(BigDecimal.ZERO).min(valorCapital);
+    }
+
+    /** Interes ya cubierto en esta cuota. */
+    public BigDecimal getInteresCubierto() {
+        return valorPagado.subtract(getValorSeguros()).max(BigDecimal.ZERO).min(valorInteres);
+    }
 
     /** Valor que falta por pagar de esta cuota. */
     public BigDecimal getSaldoPendiente() {

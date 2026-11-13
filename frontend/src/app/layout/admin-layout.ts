@@ -105,6 +105,8 @@ export class AdminLayout {
     { ruta: '/admin', texto: 'Tablero', icono: 'grid', exacto: true },
     { ruta: '/admin/clientes', texto: 'Clientes', icono: 'users', exacto: false },
     { ruta: '/admin/creditos', texto: 'Créditos', icono: 'card', exacto: false },
+    { ruta: '/admin/abonos', texto: 'Abonos individuales', icono: 'money', exacto: false },
+    { ruta: '/admin/historial', texto: 'Historial de créditos', icono: 'file', exacto: false },
     { ruta: '/admin/solicitudes', texto: 'Solicitudes', icono: 'doc-check', exacto: false },
     { ruta: '/admin/mensajes', texto: 'Mensajes', icono: 'bell', exacto: false },
     { ruta: '/admin/importar', texto: 'Importar archivos', icono: 'upload', exacto: false },

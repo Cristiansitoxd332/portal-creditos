@@ -56,7 +56,7 @@
                 } @else {
                   <span>Vence {{ q.fechaVencimiento | fecha }}</span>
                 }
-                <small>Capital {{ q.valorCapital | moneda }} · Interés {{ q.valorInteres | moneda }}</small>
+                <small>Capital {{ q.valorCapital | moneda }} · Interés {{ q.valorInteres | moneda }}@if (q.valorSeguroVida + q.valorFogade > 0) { · Seguro de vida {{ q.valorSeguroVida | moneda }} · FOGADE {{ q.valorFogade | moneda }} }</small>
               </div>
               <app-chip-cuota [estado]="q.estado" />
             </li>

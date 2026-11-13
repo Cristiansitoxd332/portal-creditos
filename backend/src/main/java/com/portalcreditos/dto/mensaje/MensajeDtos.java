@@ -35,7 +35,11 @@ public final class MensajeDtos {
             String texto,
             /** Enlace de WhatsApp con el texto listo (el administrador lo abre y presiona Enviar). */
             String enlaceWhatsapp,
-            boolean enviadoHoy
+            boolean enviadoHoy,
+            /** Codeudor (fiador) del credito, si tiene: se le puede avisar por WhatsApp cuando hay mora. */
+            String codeudor,
+            String telefonoCodeudor,
+            String enlaceWhatsappCodeudor
     ) {
     }
 

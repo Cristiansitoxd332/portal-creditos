@@ -84,10 +84,25 @@ const CLASE_TIPO: Record<TipoMensaje, string> = {
                 <label [for]="'tx' + a.creditoId">Mensaje (puede editarlo antes de enviar)</label>
                 <textarea [id]="'tx' + a.creditoId" rows="4" maxlength="700" [ngModel]="texto(a)" (ngModelChange)="editar(a, $event)"></textarea>
               </div>
-              <div class="acciones">
+              <div class="whatsapp">
+                <div class="campo">
+                  <label [for]="'wa' + a.creditoId">Número de WhatsApp (puede cambiarlo)</label>
+                  <input [id]="'wa' + a.creditoId" inputmode="tel" maxlength="15" placeholder="3001234567"
+                         [ngModel]="numero(a)" (ngModelChange)="editarNumero(a, $event)">
+                </div>
                 @if (whatsapp(a); as enlace) {
-                  <a class="btn btn-secundario btn-pequeno" [href]="enlace" target="_blank" rel="noopener noreferrer">
-                    <app-icono nombre="chat" [tamano]="16" />WhatsApp {{ a.telefono }}
+                  <a class="btn btn-whatsapp" [href]="enlace" target="_blank" rel="noopener noreferrer">
+                    <app-icono nombre="chat" [tamano]="18" />Enviar por WhatsApp
+                  </a>
+                } @else {
+                  <button type="button" class="btn btn-whatsapp" disabled><app-icono nombre="chat" [tamano]="18" />Número no válido</button>
+                }
+              </div>
+              <div class="acciones">
+                @if (a.enlaceWhatsappCodeudor) {
+                  <a class="btn btn-secundario btn-pequeno" [href]="a.enlaceWhatsappCodeudor" target="_blank" rel="noopener noreferrer"
+                     [title]="'Avisar al codeudor ' + a.codeudor">
+                    <app-icono nombre="users" [tamano]="16" />Codeudor {{ a.telefonoCodeudor }}
                   </a>
                 }
                 <button type="button" class="btn btn-primario btn-pequeno" [disabled]="enviando() || !texto(a).trim()" (click)="enviar(a)">
@@ -155,6 +170,11 @@ const CLASE_TIPO: Record<TipoMensaje, string> = {
     .mora { color: var(--mora); }
     textarea { font-size: 13.5px; line-height: 1.45; }
     .acciones { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+    .whatsapp { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; background: var(--ok-fondo); border-radius: 12px; padding: 10px 12px; }
+    .whatsapp .campo { flex: 1; min-width: 180px; margin: 0; }
+    .btn-whatsapp { background: #128c4a; color: #fff; border-color: #128c4a; }
+    .btn-whatsapp:hover { background: #0d6e3a; }
+    .btn-whatsapp:disabled { opacity: 0.6; }
     .vacio { display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--texto-3); padding: 36px; grid-column: 1 / -1; text-align: center; }
     .vacio p { margin: 0; }
     .nowrap { white-space: nowrap; }
@@ -238,10 +258,26 @@ export class Mensajes {
     this.ediciones.update((e) => ({ ...e, [this.clave(a)]: texto }));
   }
 
-  /** Enlace de WhatsApp con el texto (editado) listo para enviar desde el celular de la entidad. */
+  /** Numeros de WhatsApp editados por el administrador. */
+  private readonly numeros = signal<Record<string, string>>({});
+
+  protected numero(a: AvisoSugerido): string {
+    return this.numeros()[this.clave(a)] ?? (a.telefono ?? '');
+  }
+
+  protected editarNumero(a: AvisoSugerido, numero: string): void {
+    this.numeros.update((n) => ({ ...n, [this.clave(a)]: numero }));
+  }
+
+  /**
+   * Enlace de WhatsApp con el numero y el texto que el administrador dejo en pantalla.
+   * Abre WhatsApp (web o app) con el mensaje listo; el envio se confirma alli con el boton Enviar.
+   */
   protected whatsapp(a: AvisoSugerido): string | null {
-    if (!a.enlaceWhatsapp) return null;
-    return a.enlaceWhatsapp.split('?')[0] + '?text=' + encodeURIComponent(this.texto(a));
+    let digitos = this.numero(a).replace(/\D/g, '');
+    if (digitos.length === 10) digitos = '57' + digitos;
+    if (digitos.length < 11 || digitos.length > 15) return null;
+    return `https://wa.me/${digitos}?text=${encodeURIComponent(this.texto(a))}`;
   }
 
   protected enviar(a: AvisoSugerido): void {

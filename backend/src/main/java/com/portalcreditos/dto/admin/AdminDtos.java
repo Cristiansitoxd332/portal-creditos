@@ -1,5 +1,6 @@
 package com.portalcreditos.dto.admin;
 
+import jakarta.validation.Valid;
 import com.portalcreditos.dto.credito.Semaforo;
 import com.portalcreditos.entity.enums.ClaseVehiculo;
 import com.portalcreditos.entity.enums.TipoDocumento;
@@ -97,7 +98,27 @@ public final class AdminDtos {
             @NotNull(message = "La fecha de desembolso es obligatoria") LocalDate fechaDesembolso,
             LocalDate fechaPrimeraCuota,
             /** true = el administrador confirmo que es un credito ADICIONAL (otra moto) para un cliente con credito activo. */
-            Boolean creditoAdicional
+            Boolean creditoAdicional,
+            /** Cuota oficial del cotizador (opcional). La diferencia con la cuota financiera va a seguro de vida y FOGADE. */
+            @DecimalMin(value = "0") @Digits(integer = 13, fraction = 2) BigDecimal cuotaOficial,
+            /** Codeudor (fiador) opcional: si se envia el documento, se busca o se registra. */
+            @Valid CodeudorRequest codeudor,
+            @Size(max = 100) String asesor,
+            /** Codigo de la sucursal ("01" Neiva ... "14" Guadalupe). Vacio = 01. */
+            @Pattern(regexp = "^$|^[0-9]{1,2}$", message = "Sucursal no valida") String sucursal
+    ) {
+    }
+
+    /** Datos del codeudor (fiador) que se registran junto con el credito. */
+    public record CodeudorRequest(
+            TipoDocumento tipoDocumento,
+            @Pattern(regexp = "^[0-9A-Za-z]{5,20}$", message = "El documento del codeudor debe tener entre 5 y 20 caracteres alfanumericos")
+            String numeroDocumento,
+            @Size(max = 80) String nombres,
+            @Size(max = 80) String apellidos,
+            @Size(max = 20) String telefono,
+            @Email(message = "El correo del codeudor no es valido") @Size(max = 120) String correo,
+            @Size(max = 150) String direccion
     ) {
     }
 

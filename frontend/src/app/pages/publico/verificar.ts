@@ -34,8 +34,9 @@ import { FechaPipe } from '../../shared/pipes';
             <div class="resultado valido aparecer">
               <span class="sello"><app-icono nombre="check" [tamano]="26" [grosor]="3" /></span>
               <div>
-                <strong>Documento válido</strong>
-                <p>Este paz y salvo fue emitido por el portal.</p>
+                <strong class="pys">PAZ Y SALVO</strong>
+                <p>Crédito {{ r.numeroCredito }} cancelado el {{ r.fechaCancelacion | fecha: 'larga' }}.</p>
+                <p class="ahora">Verificado {{ ahora() }}</p>
               </div>
             </div>
             <dl class="datos">
@@ -74,6 +75,8 @@ import { FechaPipe } from '../../shared/pipes';
       font-size: 15px; text-transform: uppercase; background: var(--superficie); color: var(--texto); }
     .resultado { display: flex; gap: 14px; align-items: center; padding: 16px; border-radius: 16px; }
     .resultado strong { font-size: 17px; }
+    .resultado .pys { display: block; font-size: 28px; font-weight: 800; letter-spacing: 0.02em; line-height: 1.1; margin-bottom: 4px; }
+    .ahora { font-size: 12.5px !important; opacity: 0.85; margin-top: 4px !important; }
     .valido { background: var(--ok-fondo); color: var(--ok); }
     .invalido { background: var(--mora-fondo); color: var(--mora); }
     .sello { width: 50px; height: 50px; border-radius: 25px; background: currentColor; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
@@ -85,6 +88,14 @@ import { FechaPipe } from '../../shared/pipes';
   `],
 })
 export class Verificar {
+  /** Fecha y hora de la verificacion (tiempo real, hora de Colombia). */
+  protected readonly ahora = signal(this.horaActual());
+
+  private horaActual(): string {
+    return 'el ' + new Intl.DateTimeFormat('es-CO', { timeZone: 'America/Bogota', day: 'numeric', month: 'long', year: 'numeric',
+      hour: 'numeric', minute: '2-digit' }).format(new Date());
+  }
+
   private readonly api = inject(ApiService);
   private readonly router = inject(Router);
   readonly codigo = input<string>();
@@ -115,7 +126,7 @@ export class Verificar {
     this.cargando.set(true);
     this.error.set('');
     this.api.verificarPazYSalvo(codigo).subscribe({
-      next: (r) => { this.resultado.set(r); this.cargando.set(false); },
+      next: (r) => { this.ahora.set(this.horaActual()); this.resultado.set(r); this.cargando.set(false); },
       error: (e) => { this.error.set(mensajeError(e)); this.cargando.set(false); },
     });
   }

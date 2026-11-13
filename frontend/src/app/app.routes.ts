@@ -42,6 +42,8 @@ export const routes: Routes = [
       { path: 'creditos/nuevo', title: 'Nuevo crédito · Administración', loadComponent: () => import('./pages/admin/nuevo-credito').then((m) => m.NuevoCredito) },
       { path: 'creditos/:id', title: 'Crédito · Administración', loadComponent: () => import('./pages/admin/credito-admin').then((m) => m.CreditoAdmin) },
       { path: 'solicitudes', title: 'Solicitudes · Administración', loadComponent: () => import('./pages/admin/solicitudes').then((m) => m.Solicitudes) },
+      { path: 'abonos', title: 'Abonos individuales · Administración', loadComponent: () => import('./pages/admin/abonos').then((m) => m.Abonos) },
+      { path: 'historial', title: 'Historial de créditos · Administración', loadComponent: () => import('./pages/admin/historial').then((m) => m.HistorialCreditos) },
       { path: 'mensajes', title: 'Mensajes · Administración', loadComponent: () => import('./pages/admin/mensajes').then((m) => m.Mensajes) },
       { path: 'importar', title: 'Importar · Administración', loadComponent: () => import('./pages/admin/importar').then((m) => m.Importar) },
       { path: 'configuracion', title: 'Configuración · Administración', loadComponent: () => import('./pages/admin/configuracion').then((m) => m.Configuracion) },

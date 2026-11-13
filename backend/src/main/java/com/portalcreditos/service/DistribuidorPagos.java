@@ -70,15 +70,15 @@ public class DistribuidorPagos {
     }
 
     /**
-     * Saldo de capital del credito = valor financiado - capital ya cubierto en las cuotas.
-     * En cada cuota, lo pagado cubre primero el interes y el excedente abona a capital.
+     * Saldo de capital del credito = capital que falta por cubrir en las cuotas del plan.
+     * En cada cuota, lo pagado cubre primero seguro de vida y FOGADE, luego el interes y por ultimo el capital.
+     * (Se suma por cuota para que siga siendo correcto despues de un abono a capital que reliquida el plan.)
      */
     public BigDecimal saldoCapital(BigDecimal valorFinanciado, List<Cuota> cuotas) {
-        BigDecimal capitalCubierto = BigDecimal.ZERO;
+        BigDecimal pendiente = BigDecimal.ZERO;
         for (Cuota c : cuotas) {
-            BigDecimal sobreInteres = c.getValorPagado().subtract(c.getValorInteres()).max(BigDecimal.ZERO);
-            capitalCubierto = capitalCubierto.add(sobreInteres.min(c.getValorCapital()));
+            pendiente = pendiente.add(c.getValorCapital().subtract(c.getCapitalCubierto()));
         }
-        return valorFinanciado.subtract(capitalCubierto).max(BigDecimal.ZERO);
+        return pendiente.max(BigDecimal.ZERO);
     }
 }

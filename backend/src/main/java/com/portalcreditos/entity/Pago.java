@@ -3,6 +3,7 @@ package com.portalcreditos.entity;
 import com.portalcreditos.entity.enums.CanalPago;
 import com.portalcreditos.entity.enums.EstadoPago;
 import com.portalcreditos.entity.enums.MedioPago;
+import com.portalcreditos.entity.enums.TipoAbono;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -58,6 +59,19 @@ public class Pago {
 
     @Column(length = 255)
     private String observacion;
+
+    /** Sucursal donde se recibio el pago (abonos del administrador). */
+    @Column(length = 3)
+    private String sucursal;
+
+    /** Tipo de abono (solo para abonos registrados por el administrador; null en pagos del portal). */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo_abono", length = 20)
+    private TipoAbono tipoAbono;
+
+    /** Parte del pago que se abono directamente a capital (abonos extraordinarios). */
+    @Column(name = "valor_abono_capital", nullable = false, precision = 15, scale = 2)
+    private BigDecimal valorAbonoCapital = BigDecimal.ZERO;
 
     /** Usuario administrador que registro el pago (null si lo hizo el cliente). */
     @ManyToOne(fetch = FetchType.LAZY)

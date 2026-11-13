@@ -233,7 +233,7 @@ public class ImportacionService {
                 entero(f, "modelo"), f.get("color"), enumeracion(ClaseVehiculo.class, f, "clase", true),
                 null, null, decimal(f, "valor_vehiculo", true), decimal(f, "cuota_inicial", true),
                 decimal(f, "tasa_mensual", true), entero(f, "plazo_meses"),
-                fecha(f, "fecha_desembolso", true), fecha(f, "fecha_primera_cuota", false), Boolean.TRUE);
+                fecha(f, "fecha_desembolso", true), fecha(f, "fecha_primera_cuota", false), Boolean.TRUE, null, null, null, null);
         String error = creditoFactory.validar(r);
         if (error != null) {
             throw new ErrorDeFila(null, error);

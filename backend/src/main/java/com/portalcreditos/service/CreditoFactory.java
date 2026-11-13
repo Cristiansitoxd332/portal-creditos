@@ -5,6 +5,10 @@ import com.portalcreditos.entity.Cliente;
 import com.portalcreditos.entity.Credito;
 import com.portalcreditos.entity.Cuota;
 import com.portalcreditos.entity.Vehiculo;
+import com.portalcreditos.entity.Codeudor;
+import com.portalcreditos.repository.CodeudorRepository;
+import com.portalcreditos.dto.admin.AdminDtos.CodeudorRequest;
+import com.portalcreditos.entity.enums.TipoDocumento;
 import com.portalcreditos.entity.enums.ClaseVehiculo;
 import com.portalcreditos.entity.enums.EstadoCredito;
 import com.portalcreditos.entity.enums.EstadoCuota;
@@ -40,9 +44,12 @@ public class CreditoFactory {
     private final AmortizacionService amortizacion;
     private final SituacionCreditoService situacionService;
     private final Clock reloj;
+    private final CodeudorRepository codeudores;
 
     public CreditoFactory(ClienteRepository clientes, VehiculoRepository vehiculos, CreditoRepository creditos,
-                          AmortizacionService amortizacion, SituacionCreditoService situacionService, Clock reloj) {
+                          AmortizacionService amortizacion, SituacionCreditoService situacionService, Clock reloj,
+                          CodeudorRepository codeudores) {
+        this.codeudores = codeudores;
         this.clientes = clientes;
         this.vehiculos = vehiculos;
         this.creditos = creditos;
@@ -111,7 +118,103 @@ public class CreditoFactory {
         if (!esFechaDeCorte(primera)) {
             return "La primera cuota debe caer en una fecha de corte de la entidad: el dia 5 o el dia 20 del mes";
         }
+        if (r.sucursal() != null && !r.sucursal().isBlank()
+                && !com.portalcreditos.util.Sucursales.existe(r.sucursal().trim().length() == 1 ? "0" + r.sucursal().trim() : r.sucursal().trim())) {
+            return "La sucursal " + r.sucursal() + " no existe";
+        }
+        String errorCodeudor = validarCodeudor(r);
+        if (errorCodeudor != null) {
+            return errorCodeudor;
+        }
+        if (r.cuotaOficial() != null && r.cuotaOficial().signum() > 0) {
+            BigDecimal financiado = r.valorVehiculo().subtract(r.cuotaInicial()).setScale(0, RoundingMode.HALF_UP).setScale(2);
+            BigDecimal cuotaFinanciera = amortizacion.calcular(financiado, r.tasaInteresMensual(), r.plazoMeses(), primera).valorCuota();
+            if (r.cuotaOficial().compareTo(cuotaFinanciera) < 0) {
+                return "La cuota oficial del cotizador ($" + cuotaFinanciera.setScale(0, RoundingMode.HALF_UP).toPlainString()
+                        + " como minimo) no puede ser menor que la cuota financiera (capital + interes)";
+            }
+        }
         return null;
+    }
+
+    private String validarCodeudor(CreditoRequest r) {
+        CodeudorRequest cd = r.codeudor();
+        if (cd == null || Textos.limpiar(cd.numeroDocumento()) == null) {
+            return null;
+        }
+        String doc = cd.numeroDocumento().trim();
+        if (!doc.matches("^[0-9A-Za-z]{5,20}$")) {
+            return "El documento del codeudor debe tener entre 5 y 20 caracteres alfanumericos";
+        }
+        String docTitular = clientes.findById(r.clienteId()).map(c -> c.getNumeroDocumento()).orElse("");
+        if (doc.equalsIgnoreCase(docTitular)) {
+            return "El codeudor no puede ser el mismo titular del credito";
+        }
+        boolean existe = codeudores.findByNumeroDocumento(doc).isPresent();
+        if (!existe && (Textos.limpiar(cd.nombres()) == null || Textos.limpiar(cd.apellidos()) == null)) {
+            return "Escriba los nombres y apellidos del codeudor";
+        }
+        if (!existe && Textos.limpiar(cd.telefono()) == null) {
+            return "El telefono del codeudor es obligatorio";
+        }
+        return null;
+    }
+
+    /** Busca el codeudor por documento (actualizando sus datos de contacto) o lo registra si es nuevo. */
+    private Codeudor codeudor(CodeudorRequest cd) {
+        if (cd == null || Textos.limpiar(cd.numeroDocumento()) == null) {
+            return null;
+        }
+        String doc = cd.numeroDocumento().trim();
+        Codeudor c = codeudores.findByNumeroDocumento(doc).orElseGet(Codeudor::new);
+        c.setNumeroDocumento(doc);
+        if (cd.tipoDocumento() != null) {
+            c.setTipoDocumento(cd.tipoDocumento());
+        } else if (c.getTipoDocumento() == null) {
+            c.setTipoDocumento(TipoDocumento.CC);
+        }
+        if (Textos.limpiar(cd.nombres()) != null) {
+            c.setNombres(cd.nombres().trim());
+        }
+        if (Textos.limpiar(cd.apellidos()) != null) {
+            c.setApellidos(cd.apellidos().trim());
+        }
+        if (Textos.limpiar(cd.telefono()) != null) {
+            c.setTelefono(cd.telefono().trim());
+        }
+        if (Textos.limpiar(cd.correo()) != null) {
+            c.setCorreo(cd.correo().trim().toLowerCase(Locale.ROOT));
+        }
+        if (Textos.limpiar(cd.direccion()) != null) {
+            c.setDireccion(cd.direccion().trim());
+        }
+        return codeudores.save(c);
+    }
+
+    /** Seguro de vida y FOGADE por cuota: (cuota oficial - cuota financiera) / 2 para cada uno. */
+    public record Seguros(BigDecimal seguroVida, BigDecimal fogade) {
+        public BigDecimal total() {
+            return seguroVida.add(fogade);
+        }
+    }
+
+    /**
+     * Regla de Rentar: la cuota oficial del cotizador menos la cuota financiera (capital + interes) se divide
+     * en dos partes iguales: seguro de vida y FOGADE. Asi la cuota total vuelve a dar la cuota oficial.
+     * Si la diferencia es impar, el peso sobrante va al seguro de vida.
+     */
+    public static Seguros dividirSeguros(BigDecimal cuotaFinanciera, BigDecimal cuotaOficial) {
+        BigDecimal cero = BigDecimal.ZERO.setScale(2);
+        if (cuotaOficial == null || cuotaOficial.signum() <= 0) {
+            return new Seguros(cero, cero);
+        }
+        BigDecimal diferencia = cuotaOficial.subtract(cuotaFinanciera).setScale(0, RoundingMode.HALF_UP);
+        if (diferencia.signum() <= 0) {
+            return new Seguros(cero, cero);
+        }
+        BigDecimal fogade = diferencia.divide(BigDecimal.valueOf(2), 0, RoundingMode.DOWN);
+        BigDecimal vida = diferencia.subtract(fogade);
+        return new Seguros(vida.setScale(2), fogade.setScale(2));
     }
 
     public Credito crear(CreditoRequest r) {
@@ -153,6 +256,14 @@ public class CreditoFactory {
         c.setFechaPrimeraCuota(primera);
         c.setSaldoCapital(financiado);
         c.setEstadoPrenda(EstadoPrenda.VIGENTE);
+        c.setCodeudor(codeudor(r.codeudor()));
+        c.setAsesor(Textos.limpiar(r.asesor()));
+        c.setSucursal(com.portalcreditos.util.Sucursales.normalizar(r.sucursal()));
+        Seguros seguros = dividirSeguros(plan.valorCuota(), r.cuotaOficial());
+        c.setCuotaOficial(seguros.total().signum() > 0 ? r.cuotaOficial().setScale(2, RoundingMode.HALF_UP) : null);
+        c.setSeguroVidaCuota(seguros.seguroVida());
+        c.setFogadeCuota(seguros.fogade());
+        c.setValorCuota(plan.valorCuota().add(seguros.total()));
         for (AmortizacionService.FilaAmortizacion f : plan.filas()) {
             Cuota q = new Cuota();
             q.setCredito(c);
@@ -160,7 +271,9 @@ public class CreditoFactory {
             q.setFechaVencimiento(f.fechaVencimiento());
             q.setValorCapital(f.valorCapital());
             q.setValorInteres(f.valorInteres());
-            q.setValorCuota(f.valorCuota());
+            q.setValorSeguroVida(seguros.seguroVida());
+            q.setValorFogade(seguros.fogade());
+            q.setValorCuota(f.valorCuota().add(seguros.total()));
             q.setSaldoCapitalFinal(f.saldoCapitalFinal());
             q.setValorPagado(BigDecimal.ZERO.setScale(2));
             q.setEstado(EstadoCuota.PENDIENTE);

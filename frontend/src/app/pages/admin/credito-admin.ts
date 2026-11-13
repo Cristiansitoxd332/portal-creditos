@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, effect, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { CreditoDetalle, MedioPago, OpcionesPago, PagoHistorial, PlanPagos } from '../../core/models';
@@ -12,14 +13,16 @@ import { FechaPipe, MonedaPipe, NumeroPipe } from '../../shared/pipes';
 /** Detalle de un credito para el administrador: plan, pagos y registro de pagos recibidos por otros canales. */
 @Component({
   selector: 'app-credito-admin',
-  imports: [FormsModule, Icono, Encabezado, Cargando, Anillo, ChipSemaforo, ChipCuota, MonedaPipe, NumeroPipe, FechaPipe],
+  imports: [FormsModule, RouterLink, Icono, Encabezado, Cargando, Anillo, ChipSemaforo, ChipCuota, MonedaPipe, NumeroPipe, FechaPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (detalle(); as d) {
       <app-encabezado [titulo]="'Crédito ' + d.resumen.numeroCredito" [subtitulo]="d.resumen.cliente + ' · ' + d.resumen.documentoCliente" volver="/admin/creditos">
+        <a class="btn btn-secundario" routerLink="/admin/historial" [queryParams]="{ doc: d.resumen.documentoCliente }"><app-icono nombre="file" [tamano]="18" />Historial</a>
         @if (d.resumen.estado === 'CANCELADO') {
           <button type="button" class="btn btn-secundario" (click)="pazYSalvo()"><app-icono nombre="download" [tamano]="18" />Paz y salvo</button>
         } @else {
+          <a class="btn btn-secundario" routerLink="/admin/abonos" [queryParams]="{ doc: d.resumen.documentoCliente }"><app-icono nombre="calculator" [tamano]="18" />Abono individual</a>
           <button type="button" class="btn btn-primario" (click)="abrirPago()"><app-icono nombre="money" [tamano]="18" />Registrar pago</button>
         }
       </app-encabezado>
@@ -42,6 +45,10 @@ import { FechaPipe, MonedaPipe, NumeroPipe } from '../../shared/pipes';
           <div><span>Vehículo</span><strong>{{ d.resumen.vehiculo }} · {{ d.resumen.placa }}</strong></div>
           <div><span>Desembolso</span><strong>{{ d.fechaDesembolso | fecha }}</strong></div>
           <div><span>Prenda</span><strong>{{ d.resumen.estadoPrenda === 'LEVANTADA' ? 'Levantada' : d.resumen.estadoPrenda === 'EN_TRAMITE' ? 'En trámite' : 'Vigente' }}</strong></div>
+          <div><span>Seguro de vida / FOGADE por cuota</span><strong>{{ d.seguroVidaCuota | moneda }} / {{ d.fogadeCuota | moneda }}</strong></div>
+          <div><span>Codeudor</span><strong>{{ d.codeudor ? d.codeudor.nombre + ' · ' + d.codeudor.numeroDocumento : 'Sin codeudor' }}</strong></div>
+          @if (d.codeudor?.telefono) { <div><span>Teléfono codeudor</span><strong>{{ d.codeudor!.telefono }}</strong></div> }
+          @if (d.asesor) { <div><span>Asesor</span><strong>{{ d.asesor }}</strong></div> }
         </section>
       </div>
 
@@ -73,12 +80,13 @@ import { FechaPipe, MonedaPipe, NumeroPipe } from '../../shared/pipes';
       @if (pestana() === 'plan') {
         <div class="tabla-caja tarjeta sin-relleno">
           <table class="tabla">
-            <thead><tr><th>#</th><th>Vence</th><th class="num">Cuota</th><th class="num">Capital</th><th class="num">Interés</th><th class="num">Pagado</th><th class="num">Pendiente</th><th>Estado</th></tr></thead>
+            <thead><tr><th>#</th><th>Vence</th><th class="num">Cuota</th><th class="num">Capital</th><th class="num">Interés</th><th class="num">Seguros</th><th class="num">Pagado</th><th class="num">Pendiente</th><th>Estado</th></tr></thead>
             <tbody>
               @for (c of plan()?.cuotas ?? []; track c.numeroCuota) {
                 <tr [class.vencida]="c.estado === 'VENCIDA'">
                   <td>{{ c.numeroCuota }}</td><td>{{ c.fechaVencimiento | fecha }}</td>
                   <td class="num">{{ c.valorCuota | moneda }}</td><td class="num">{{ c.valorCapital | moneda }}</td><td class="num">{{ c.valorInteres | moneda }}</td>
+                  <td class="num">{{ c.valorSeguroVida + c.valorFogade | moneda }}</td>
                   <td class="num">{{ c.valorPagado | moneda }}</td><td class="num">{{ c.saldoPendiente | moneda }}</td>
                   <td><app-chip-cuota [estado]="c.estado" /></td>
                 </tr>

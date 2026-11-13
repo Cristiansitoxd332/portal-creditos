@@ -105,6 +105,31 @@ export interface CreditoDetalle {
   totalInteresesPlan: number;
   totalPagarPlan: number;
   vehiculo: VehiculoInfo;
+  codeudor: CodeudorInfo | null;
+  asesor: string | null;
+  cuotaOficial: number | null;
+  seguroVidaCuota: number;
+  fogadeCuota: number;
+}
+
+/** Codeudor (fiador) de un crédito. */
+export interface CodeudorInfo {
+  tipoDocumento: string;
+  numeroDocumento: string;
+  nombre: string;
+  telefono: string | null;
+  correo: string | null;
+  direccion: string | null;
+}
+
+export interface CodeudorRequest {
+  tipoDocumento: TipoDocumento;
+  numeroDocumento: string;
+  nombres: string | null;
+  apellidos: string | null;
+  telefono: string | null;
+  correo: string | null;
+  direccion: string | null;
 }
 
 export interface CuotaInfo {
@@ -112,6 +137,8 @@ export interface CuotaInfo {
   fechaVencimiento: string;
   valorCapital: number;
   valorInteres: number;
+  valorSeguroVida: number;
+  valorFogade: number;
   valorCuota: number;
   saldoCapitalFinal: number;
   valorPagado: number;
@@ -359,6 +386,12 @@ export interface CreditoRequest {
   fechaPrimeraCuota: string | null;
   /** true = el administrador confirmo que es un crédito adicional (otra moto) para un cliente con crédito activo. */
   creditoAdicional: boolean;
+  /** Cuota oficial del cotizador: la diferencia con la cuota financiera va a seguro de vida y FOGADE. */
+  cuotaOficial: number | null;
+  codeudor: CodeudorRequest | null;
+  asesor: string | null;
+  /** Código de la sucursal ("01" Neiva ... "14" Guadalupe). */
+  sucursal: string;
 }
 
 export interface FilaAmortizacion {
@@ -467,6 +500,9 @@ export interface AvisoSugerido {
   texto: string;
   enlaceWhatsapp: string | null;
   enviadoHoy: boolean;
+  codeudor: string | null;
+  telefonoCodeudor: string | null;
+  enlaceWhatsappCodeudor: string | null;
 }
 
 export interface PanelAvisos {
@@ -500,4 +536,110 @@ export interface ResultadoEnvio {
   enviados: number;
   omitidos: number;
   mensaje: string;
+}
+
+// ============================================================ abonos individuales e historial
+
+export type TipoAbono = 'NORMAL' | 'CAPITAL_PLAZO' | 'CAPITAL_CUOTA' | 'TOTAL';
+
+export interface AbonoRequest {
+  creditoId: number;
+  tipoAbono: TipoAbono;
+  valor: number | null;
+  medioPago: MedioPago;
+  concepto: string | null;
+  /** Sucursal donde se recibe el pago. */
+  sucursal: string | null;
+}
+
+export interface CreditoParaAbono {
+  credito: CreditoResumen;
+  valorNormalPago: number;
+  valorTotalPago: number;
+  seguroVidaCuota: number;
+  fogadeCuota: number;
+  sucursal: string;
+}
+
+export interface DeudorAbonos {
+  clienteId: number;
+  documento: string;
+  nombre: string;
+  telefono: string | null;
+  fecha: string;
+  creditos: CreditoParaAbono[];
+}
+
+export interface LineaAbono {
+  tipo: string;
+  cuota: number | null;
+  detalle: string;
+  saldoAnterior: number;
+  valor: number;
+  saldo: number;
+}
+
+export interface VistaPreviaAbono {
+  creditoId: number;
+  numeroCredito: string;
+  tipoAbono: TipoAbono;
+  valor: number;
+  aMora: number;
+  aCuotas: number;
+  aCapital: number;
+  saldoCapitalAnterior: number;
+  saldoCapitalNuevo: number;
+  cuotasPendientesAntes: number;
+  cuotasPendientesDespues: number;
+  valorCuotaAntes: number;
+  valorCuotaDespues: number;
+  cancelaCredito: boolean;
+  resumen: string;
+  lineas: LineaAbono[];
+}
+
+export interface CalculoFecha {
+  fecha: string;
+  total: boolean;
+  capital: number;
+  interes: number;
+  seguroVida: number;
+  fogade: number;
+  mora: number;
+  diasMora: number;
+  diasCausados: number;
+  valorPagar: number;
+  explicacion: string;
+}
+
+export interface PersonaHistorial {
+  documento: string;
+  nombre: string;
+  telefono: string | null;
+  correo: string | null;
+  direccion: string | null;
+  ciudad: string | null;
+  esCliente: boolean;
+  esCodeudor: boolean;
+}
+
+export interface CreditoHistorial {
+  credito: CreditoResumen;
+  tipoCredito: string;
+  periodicidad: string;
+  fechaDesembolso: string;
+  fechaCancelacion: string | null;
+  asesor: string | null;
+  sucursal: string;
+  cuotaOficial: number | null;
+  seguroVidaCuota: number;
+  fogadeCuota: number;
+  codeudor: CodeudorInfo | null;
+}
+
+export interface Historial {
+  persona: PersonaHistorial;
+  fecha: string;
+  creditosDeudor: CreditoHistorial[];
+  creditosCodeudor: CreditoHistorial[];
 }

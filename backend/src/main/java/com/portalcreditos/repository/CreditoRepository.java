@@ -19,6 +19,9 @@ public interface CreditoRepository extends JpaRepository<Credito, Long> {
 
     List<Credito> findByClienteIdOrderByFechaDesembolsoDesc(Long clienteId);
 
+    /** Creditos que respalda un codeudor (busqueda por su documento). */
+    List<Credito> findByCodeudorNumeroDocumentoOrderByFechaDesembolsoDesc(String numeroDocumento);
+
     /** Valida que un credito pertenezca al cliente (evita que un cliente vea creditos ajenos). */
     Optional<Credito> findByIdAndClienteId(Long id, Long clienteId);
 

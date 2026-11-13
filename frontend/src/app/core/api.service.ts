@@ -7,7 +7,7 @@ import {
   CreditoResumen, EstadoLevantamiento, EstadoSolicitud, ImportacionInfo, OpcionesPago, PagoHistorial, PagoRequest,
   PazYSalvoEstado, Perfil, PlanAmortizacion, PlanPagos, RegistroAuditoria, RequisitoInfo, ResultadoImportacion,
   SimulacionAbono, SolicitudInfo, Tablero, TipoCarga, VerificacionPazYSalvo,
-  BandejaCliente, MensajeInfo, PanelAvisos, ResultadoEnvio, TipoMensaje,
+  BandejaCliente, MensajeInfo, AbonoRequest, CalculoFecha, CodeudorInfo, DeudorAbonos, Historial, VistaPreviaAbono, PanelAvisos, ResultadoEnvio, TipoMensaje,
 } from './models';
 
 /**
@@ -193,6 +193,31 @@ export class ApiService {
   }
   marcarMensajeLeido(id: number): Observable<MensajeInfo> {
     return this.http.post<MensajeInfo>(`${API_URL}/cliente/mensajes/${id}/leido`, {});
+  }
+
+  // ============================================================ abonos individuales e historial
+
+  deudorAbonos(documento: string): Observable<DeudorAbonos> {
+    return this.http.get<DeudorAbonos>(`${API_URL}/admin/abonos/deudor/${encodeURIComponent(documento)}`);
+  }
+  vistaPreviaAbono(r: AbonoRequest): Observable<VistaPreviaAbono> {
+    return this.http.post<VistaPreviaAbono>(`${API_URL}/admin/abonos/vista-previa`, r);
+  }
+  registrarAbono(r: AbonoRequest): Observable<Comprobante> {
+    return this.http.post<Comprobante>(`${API_URL}/admin/abonos`, r);
+  }
+  historial(documento: string): Observable<Historial> {
+    return this.http.get<Historial>(`${API_URL}/admin/historial/${encodeURIComponent(documento)}`);
+  }
+  calculoCredito(creditoId: number, fecha: string, total: boolean): Observable<CalculoFecha> {
+    const params = new HttpParams().set('fecha', fecha).set('total', total);
+    return this.http.get<CalculoFecha>(`${API_URL}/admin/historial/creditos/${creditoId}/calculo`, { params });
+  }
+  comprobanteAdminPdf(creditoId: number, pagoId: number): Observable<Blob> {
+    return this.http.get(`${API_URL}/admin/abonos/creditos/${creditoId}/pagos/${pagoId}/pdf`, { responseType: 'blob' });
+  }
+  codeudor(documento: string): Observable<CodeudorInfo> {
+    return this.http.get<CodeudorInfo>(`${API_URL}/admin/codeudores/${encodeURIComponent(documento)}`);
   }
 
   private formulario(archivo: File): FormData {

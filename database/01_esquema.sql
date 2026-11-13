@@ -30,6 +30,7 @@ DROP TABLE IF EXISTS aplicacion_pago;
 DROP TABLE IF EXISTS pago;
 DROP TABLE IF EXISTS cuota;
 DROP TABLE IF EXISTS credito;
+DROP TABLE IF EXISTS codeudor;
 DROP TABLE IF EXISTS vehiculo;
 DROP TABLE IF EXISTS usuario;
 DROP TABLE IF EXISTS cliente;
@@ -102,6 +103,26 @@ CREATE TABLE vehiculo (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
 
 -- =====================================================================
+-- 3b. CODEUDOR: fiador que respalda creditos (maximo uno por credito).
+--     No tiene usuario en el portal; solo queda registrado.
+-- =====================================================================
+CREATE TABLE codeudor (
+    id                BIGINT        NOT NULL AUTO_INCREMENT,
+    tipo_documento    VARCHAR(5)    NOT NULL DEFAULT 'CC',
+    numero_documento  VARCHAR(20)   NOT NULL,
+    nombres           VARCHAR(80)   NOT NULL,
+    apellidos         VARCHAR(80)   NOT NULL,
+    telefono          VARCHAR(20)   NULL,
+    correo            VARCHAR(120)  NULL,
+    direccion         VARCHAR(150)  NULL,
+    ciudad            VARCHAR(60)   NULL,
+    fecha_registro    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT pk_codeudor PRIMARY KEY (id),
+    CONSTRAINT uk_codeudor_documento UNIQUE (numero_documento),
+    CONSTRAINT ck_codeudor_tipo_doc CHECK (tipo_documento IN ('CC', 'CE', 'NIT', 'PAS'))
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+
+-- =====================================================================
 -- 4. CREDITO: obligacion financiera de un cliente sobre un vehiculo
 --    - tasa_interes_mensual se expresa en porcentaje (1.5000 = 1.5 %)
 --    - saldo_capital y estado se recalculan en el backend con cada pago
@@ -124,6 +145,12 @@ CREATE TABLE credito (
     estado_prenda         VARCHAR(20)    NOT NULL DEFAULT 'VIGENTE',
     fecha_cancelacion     DATE           NULL,
     mora_cubierta_hasta   DATE           NULL COMMENT 'Fecha hasta la cual ya se pago la mora diaria',
+    codeudor_id           BIGINT         NULL COMMENT 'Fiador del credito (opcional, maximo uno)',
+    asesor                VARCHAR(100)   NULL COMMENT 'Asesor de ventas',
+    sucursal              VARCHAR(3)     NOT NULL DEFAULT '01' COMMENT 'Sucursal: 01 Neiva ... 14 Guadalupe',
+    cuota_oficial         DECIMAL(15, 2) NULL COMMENT 'Cuota oficial del cotizador de Rentar',
+    seguro_vida_cuota     DECIMAL(15, 2) NOT NULL DEFAULT 0 COMMENT '(cuota oficial - cuota financiera) / 2',
+    fogade_cuota          DECIMAL(15, 2) NOT NULL DEFAULT 0 COMMENT '(cuota oficial - cuota financiera) / 2',
     fecha_creacion        DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     fecha_actualizacion   DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT pk_credito PRIMARY KEY (id),
@@ -131,6 +158,9 @@ CREATE TABLE credito (
     CONSTRAINT uk_credito_vehiculo UNIQUE (vehiculo_id),
     CONSTRAINT fk_credito_cliente FOREIGN KEY (cliente_id) REFERENCES cliente (id),
     CONSTRAINT fk_credito_vehiculo FOREIGN KEY (vehiculo_id) REFERENCES vehiculo (id),
+    CONSTRAINT fk_credito_codeudor FOREIGN KEY (codeudor_id) REFERENCES codeudor (id),
+    CONSTRAINT ck_credito_seguros CHECK (seguro_vida_cuota >= 0 AND fogade_cuota >= 0),
+    CONSTRAINT ck_credito_sucursal CHECK (sucursal IN ('01','02','03','04','05','06','07','08','09','10','11','12','13','14')),
     CONSTRAINT ck_credito_valores CHECK (valor_vehiculo > 0 AND cuota_inicial >= 0 AND valor_financiado > 0),
     CONSTRAINT ck_credito_tasa CHECK (tasa_interes_mensual >= 0 AND tasa_interes_mensual <= 10),
     CONSTRAINT ck_credito_plazo CHECK (plazo_meses BETWEEN 1 AND 120),
@@ -150,6 +180,8 @@ CREATE TABLE cuota (
     credito_id           BIGINT         NOT NULL,
     numero_cuota         INT            NOT NULL,
     fecha_vencimiento    DATE           NOT NULL,
+    valor_seguro_vida    DECIMAL(15, 2) NOT NULL DEFAULT 0,
+    valor_fogade         DECIMAL(15, 2) NOT NULL DEFAULT 0,
     valor_capital        DECIMAL(15, 2) NOT NULL,
     valor_interes        DECIMAL(15, 2) NOT NULL,
     valor_cuota          DECIMAL(15, 2) NOT NULL,
@@ -167,6 +199,7 @@ CREATE TABLE cuota (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
 
 CREATE INDEX ix_cuota_estado_vencimiento ON cuota (estado, fecha_vencimiento);
+CREATE INDEX ix_credito_codeudor ON credito (codeudor_id);
 
 -- =====================================================================
 -- 6. PAGO: cada transaccion registrada (simulada en el prototipo)
@@ -182,6 +215,9 @@ CREATE TABLE pago (
     canal           VARCHAR(20)    NOT NULL,
     estado          VARCHAR(20)    NOT NULL DEFAULT 'APROBADO',
     observacion     VARCHAR(255)   NULL,
+    sucursal        VARCHAR(3)     NULL COMMENT 'Sucursal donde se recibio el pago',
+    tipo_abono      VARCHAR(20)    NULL COMMENT 'NORMAL, CAPITAL_PLAZO, CAPITAL_CUOTA o TOTAL (abonos del administrador)',
+    valor_abono_capital DECIMAL(15, 2) NOT NULL DEFAULT 0 COMMENT 'Parte abonada directamente a capital',
     registrado_por  BIGINT         NULL,
     fecha_creacion  DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT pk_pago PRIMARY KEY (id),
@@ -191,7 +227,8 @@ CREATE TABLE pago (
     CONSTRAINT ck_pago_valor CHECK (valor > 0),
     CONSTRAINT ck_pago_medio CHECK (medio_pago IN ('PSE_SIMULADO', 'TARJETA_SIMULADA', 'EFECTIVO', 'TRANSFERENCIA', 'CONSIGNACION')),
     CONSTRAINT ck_pago_canal CHECK (canal IN ('PORTAL', 'ADMIN', 'IMPORTACION')),
-    CONSTRAINT ck_pago_estado CHECK (estado IN ('APROBADO', 'RECHAZADO', 'PENDIENTE'))
+    CONSTRAINT ck_pago_estado CHECK (estado IN ('APROBADO', 'RECHAZADO', 'PENDIENTE')),
+    CONSTRAINT ck_pago_tipo_abono CHECK (tipo_abono IS NULL OR tipo_abono IN ('NORMAL', 'CAPITAL_PLAZO', 'CAPITAL_CUOTA', 'TOTAL'))
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
 
 CREATE INDEX ix_pago_credito_fecha ON pago (credito_id, fecha_pago);

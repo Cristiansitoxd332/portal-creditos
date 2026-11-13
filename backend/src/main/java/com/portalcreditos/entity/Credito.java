@@ -83,6 +83,34 @@ public class Credito {
     @Column(name = "mora_cubierta_hasta")
     private LocalDate moraCubiertaHasta;
 
+    /** Codeudor (fiador) del credito; opcional y como maximo uno. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "codeudor_id")
+    private Codeudor codeudor;
+
+    /** Sucursal donde se origino el credito (codigo "01" a "14", ver Sucursales). */
+    @Column(nullable = false, length = 3)
+    private String sucursal = "01";
+
+    /** Asesor de ventas que tramito el credito (opcional). */
+    @Column(length = 100)
+    private String asesor;
+
+    /**
+     * Cuota oficial del cotizador de Rentar. La diferencia con la cuota financiera (capital + interes)
+     * se reparte por partes iguales entre seguro de vida y FOGADE.
+     */
+    @Column(name = "cuota_oficial", precision = 15, scale = 2)
+    private BigDecimal cuotaOficial;
+
+    /** Seguro de vida que se cobra en cada cuota. */
+    @Column(name = "seguro_vida_cuota", nullable = false, precision = 15, scale = 2)
+    private BigDecimal seguroVidaCuota = BigDecimal.ZERO;
+
+    /** FOGADE (fondo de garantias) que se cobra en cada cuota. */
+    @Column(name = "fogade_cuota", nullable = false, precision = 15, scale = 2)
+    private BigDecimal fogadeCuota = BigDecimal.ZERO;
+
     /** Plan de pagos ordenado por numero de cuota. */
     @OneToMany(mappedBy = "credito", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("numeroCuota ASC")

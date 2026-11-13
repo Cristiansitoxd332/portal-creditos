@@ -5,6 +5,7 @@ import com.lowagie.text.Chunk;
 import com.lowagie.text.Document;
 import com.lowagie.text.Element;
 import com.lowagie.text.Font;
+import com.lowagie.text.Image;
 import com.lowagie.text.PageSize;
 import com.lowagie.text.Paragraph;
 import com.lowagie.text.Phrase;
@@ -49,12 +50,40 @@ public class DocumentoPdfService {
     private static final DateTimeFormatter FECHA = DateTimeFormatter.ofPattern("d 'de' MMMM 'de' yyyy", CO);
     private static final DateTimeFormatter FECHA_HORA = DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm a", CO);
 
+    private static final DateTimeFormatter DDMMYYYY = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private static final DateTimeFormatter MES = DateTimeFormatter.ofPattern("MMMM", CO);
+
     private final QrService qrService;
     private final String entidad;
+    private final String razonSocial;
+    private final String nit;
+    private final String ciudadFirma;
+    private final String elaboro;
+    private final String rutaFirma;
+    private final String pie;
+    private final boolean marcaDeAguaPazYSalvo;
+    private final boolean qrPazYSalvo;
 
-    public DocumentoPdfService(QrService qrService, @Value("${app.documentos.entidad}") String entidad) {
+    public DocumentoPdfService(QrService qrService,
+                               @Value("${app.documentos.entidad}") String entidad,
+                               @Value("${app.documentos.razon-social:RENTAR INVERSIONES LTDA}") String razonSocial,
+                               @Value("${app.documentos.nit:813.007.547-8}") String nit,
+                               @Value("${app.documentos.ciudad-firma:Neiva}") String ciudadFirma,
+                               @Value("${app.documentos.elaboro:Cristian Sarmiento}") String elaboro,
+                               @Value("${app.documentos.firma:firma/firma.png}") String rutaFirma,
+                               @Value("${app.documentos.pie:Carrera 5 n 15-01 oficina 201}") String pie,
+                               @Value("${app.documentos.paz-y-salvo.marca-de-agua:false}") boolean marcaDeAguaPazYSalvo,
+                               @Value("${app.documentos.paz-y-salvo.qr:true}") boolean qrPazYSalvo) {
+        this.marcaDeAguaPazYSalvo = marcaDeAguaPazYSalvo;
+        this.qrPazYSalvo = qrPazYSalvo;
         this.qrService = qrService;
         this.entidad = entidad;
+        this.razonSocial = razonSocial;
+        this.nit = nit;
+        this.ciudadFirma = ciudadFirma;
+        this.elaboro = elaboro;
+        this.rutaFirma = rutaFirma;
+        this.pie = pie;
     }
 
     /** Datos que necesita el paz y salvo. */
@@ -76,70 +105,155 @@ public class DocumentoPdfService {
 
     // ================================================================== paz y salvo
 
+    /**
+     * Paz y salvo con el formato de Rentar Inversiones: logo, razon social y NIT, "CERTIFICA QUE:",
+     * texto del credito de motocicleta a PAZ Y SALVO con la fecha de cancelacion, fecha de firma (el dia en que
+     * se descarga), firma del area de cartera, "ELABORO", codigo QR de verificacion y pie con los datos de la oficina.
+     * Conserva la marca de agua de documento de prueba (prototipo con datos ficticios).
+     */
     public byte[] pazYSalvo(DatosPazYSalvo d) {
         ByteArrayOutputStream salida = new ByteArrayOutputStream();
-        Document doc = new Document(PageSize.LETTER, 60, 60, 110, 70);
+        Document doc = new Document(PageSize.LETTER, 72, 72, 175, 95);
         PdfWriter writer = PdfWriter.getInstance(doc, salida);
         doc.addTitle("Paz y salvo " + d.numeroCredito());
-        doc.addCreator("Portal de Consulta de Creditos - prototipo");
+        doc.addCreator("Portal de creditos Rentar - prototipo");
         doc.open();
-        encabezado(writer, doc, "CERTIFICADO DE PAZ Y SALVO");
-        marcaDeAgua(writer, doc);
+        if (marcaDeAguaPazYSalvo) {
+            marcaDeAgua(writer, doc);
+        }
+        PdfContentByte cb = writer.getDirectContent();
+        Rectangle pagina = doc.getPageSize();
 
-        doc.add(parrafo("Código de verificación: " + d.codigoVerificacion(), fuente(9, Font.NORMAL, GRIS), Element.ALIGN_RIGHT, 0));
-        doc.add(parrafo("Fecha de expedición: " + d.fechaEmision().format(FECHA), fuente(9, Font.NORMAL, GRIS), Element.ALIGN_RIGHT, 24));
+        // Encabezado: logo + razon social y NIT
+        Image logo = imagenRecurso("/documentos/logo-rentar.png");
+        if (logo != null) {
+            logo.scaleToFit(92, 105);
+            logo.setAbsolutePosition(62, pagina.getHeight() - 40 - logo.getScaledHeight());
+            agregarImagen(cb, logo);
+        }
+        float centro = pagina.getWidth() / 2 + 45;
+        ColumnText.showTextAligned(cb, Element.ALIGN_CENTER, new Phrase(razonSocial, serif(19, Font.BOLD)),
+                centro, pagina.getHeight() - 78, 0);
+        ColumnText.showTextAligned(cb, Element.ALIGN_CENTER, new Phrase("NIT. " + nit, serif(19, Font.BOLD)),
+                centro, pagina.getHeight() - 100, 0);
 
-        doc.add(parrafo(entidad.toUpperCase(CO), fuente(13, Font.BOLD, Color.BLACK), Element.ALIGN_CENTER, 4));
-        doc.add(parrafo("CERTIFICA QUE:", fuente(12, Font.BOLD, Color.BLACK), Element.ALIGN_CENTER, 22));
+        doc.add(parrafo("CERTIFICA QUE:", fuente(13, Font.BOLD, Color.BLACK), Element.ALIGN_CENTER, 48));
 
+        Font normal = fuente(11.5f, Font.NORMAL, Color.BLACK);
+        Font negrita = fuente(11.5f, Font.BOLD, Color.BLACK);
         Paragraph cuerpo = new Paragraph();
         cuerpo.setAlignment(Element.ALIGN_JUSTIFIED);
-        cuerpo.setLeading(18);
-        Font normal = fuente(11, Font.NORMAL, Color.BLACK);
-        Font negrita = fuente(11, Font.BOLD, Color.BLACK);
-        cuerpo.add(new Chunk("El(la) señor(a) ", normal));
+        cuerpo.setLeading(21);
+        cuerpo.add(new Chunk("El crédito de Motocicleta ", normal));
+        cuerpo.add(new Chunk("N°" + d.numeroCredito(), negrita));
+        cuerpo.add(new Chunk(" correspondiente al señor(a) ", normal));
         cuerpo.add(new Chunk(d.titular().toUpperCase(CO), negrita));
-        cuerpo.add(new Chunk(", identificado(a) con " + d.tipoDocumento() + " No. ", normal));
+        cuerpo.add(new Chunk(" con " + nombreDocumento(d.tipoDocumento()) + " ", normal));
         cuerpo.add(new Chunk(d.numeroDocumento(), negrita));
-        cuerpo.add(new Chunk(", se encuentra a ", normal));
-        cuerpo.add(new Chunk("PAZ Y SALVO", negrita));
-        cuerpo.add(new Chunk(" por todo concepto con la obligación No. ", normal));
-        cuerpo.add(new Chunk(d.numeroCredito(), negrita));
-        cuerpo.add(new Chunk(", otorgada el " + d.fechaDesembolso().format(FECHA) + " por valor de "
-                + pesos(d.valorFinanciado()) + " para la financiación del vehículo " + d.vehiculo() + " de placa ", normal));
-        cuerpo.add(new Chunk(d.placa(), negrita));
-        cuerpo.add(new Chunk(". La obligación fue cancelada en su totalidad el "
-                + (d.fechaCancelacion() != null ? d.fechaCancelacion().format(FECHA) : "(fecha no registrada)") + ".", normal));
-        cuerpo.setSpacingAfter(16);
+        cuerpo.add(new Chunk(" a la fecha se encuentra a ", normal));
+        cuerpo.add(new Chunk("PAZ\u00a0Y\u00a0SALVO\u00a0" + (d.fechaCancelacion() != null ? d.fechaCancelacion().format(DDMMYYYY) : ""), negrita));
+        cuerpo.setSpacingAfter(46);
         doc.add(cuerpo);
 
-        doc.add(parrafo("Con este certificado el titular puede iniciar el trámite de levantamiento de la prenda "
-                + "sobre el vehículo, de acuerdo con los requisitos establecidos por la entidad.", normal, Element.ALIGN_JUSTIFIED, 30));
+        // Fecha de firma: el dia en que se descarga (tiempo real)
+        LocalDateTime emision = d.fechaEmision();
+        Paragraph constancia = new Paragraph();
+        constancia.setAlignment(Element.ALIGN_JUSTIFIED);
+        constancia.setLeading(21);
+        constancia.add(new Chunk("Para constancia se firma en " + ciudadFirma + ", a los (" + emision.getDayOfMonth()
+                + ") días del mes de ", normal));
+        constancia.add(new Chunk(emision.format(MES), negrita));
+        constancia.add(new Chunk(" de " + emision.getYear() + ".", normal));
+        constancia.setSpacingAfter(4);
+        doc.add(constancia);
 
-        // Bloque de verificacion con QR
-        PdfPTable tabla = new PdfPTable(new float[]{1f, 3f});
-        tabla.setWidthPercentage(100);
-        PdfPCell celdaQr = new PdfPCell(new Phrase(" "));
-        celdaQr.setFixedHeight(110);
-        celdaQr.setBorder(Rectangle.NO_BORDER);
-        tabla.addCell(celdaQr);
-        PdfPCell texto = new PdfPCell();
-        texto.setBorder(Rectangle.NO_BORDER);
-        texto.setVerticalAlignment(Element.ALIGN_MIDDLE);
-        texto.addElement(parrafo("Verifique la autenticidad de este documento", fuente(10, Font.BOLD, Color.BLACK), Element.ALIGN_LEFT, 4));
-        texto.addElement(parrafo("Escanee el código QR o ingrese a:", fuente(9, Font.NORMAL, GRIS), Element.ALIGN_LEFT, 2));
-        texto.addElement(parrafo(d.urlVerificacion(), fuente(9, Font.NORMAL, AZUL), Element.ALIGN_LEFT, 2));
-        texto.addElement(parrafo("Código: " + d.codigoVerificacion(), fuente(9, Font.BOLD, Color.BLACK), Element.ALIGN_LEFT, 0));
-        tabla.addCell(texto);
-        doc.add(tabla);
+        // Firma (imagen local, no se sube a GitHub) o linea para firmar
+        float yFirma = writer.getVerticalPosition(true) - 64;
+        Image firma = imagenArchivo(rutaFirma);
+        if (firma != null) {
+            firma.scaleToFit(175, 66);
+            firma.setAbsolutePosition(doc.left() - 6, yFirma);
+            agregarImagen(cb, firma);
+        } else {
+            cb.saveState();
+            cb.setColorFill(Color.BLACK);
+            cb.rectangle(doc.left(), yFirma + 6, 170, 0.8f);
+            cb.fill();
+            cb.restoreState();
+        }
+        doc.add(parrafo(" ", fuente(10, Font.NORMAL, Color.BLACK), Element.ALIGN_LEFT, 52));
+        doc.add(parrafo("ÁREA DE CARTERA", fuente(11, Font.BOLD, Color.BLACK), Element.ALIGN_LEFT, 2));
+        doc.add(parrafo("RENTAR INVERSIONES", fuente(11, Font.BOLD, Color.BLACK), Element.ALIGN_LEFT, 30));
+        doc.add(parrafo("ELABORÓ: " + elaboro.toUpperCase(CO), fuente(7.5f, Font.BOLD, Color.BLACK), Element.ALIGN_LEFT, 26));
 
-        // El QR se dibuja en la posicion de la primera celda
-        float qrY = writer.getVerticalPosition(true) + 5;
-        dibujarQr(writer.getDirectContent(), qrService.generar(d.urlVerificacion()), doc.left(), qrY, 100);
+        // Codigo QR pequeno en la esquina inferior derecha para verificar que el documento es autentico
+        if (qrPazYSalvo) {
+            float lado = 54;
+            float x = pagina.getWidth() - doc.rightMargin() - lado;
+            dibujarQr(cb, qrService.generar(d.urlVerificacion()), x, 100, lado);
+            ColumnText.showTextAligned(cb, Element.ALIGN_CENTER, new Phrase(d.codigoVerificacion(), fuente(6, Font.NORMAL, GRIS)),
+                    x + lado / 2, 93, 0);
+        }
 
-        pieDePagina(writer, doc);
+        pieRentar(cb, pagina);
         doc.close();
         return salida.toByteArray();
+    }
+
+    /** Pie con los datos de la oficina (como el formato fisico) y la advertencia de prototipo. */
+    private void pieRentar(PdfContentByte cb, Rectangle pagina) {
+        float y = 72;
+        for (String linea : pie.split("\\|")) {
+            ColumnText.showTextAligned(cb, Element.ALIGN_CENTER, new Phrase(linea.trim(), serif(10.5f, Font.NORMAL)),
+                    pagina.getWidth() / 2, y, 0);
+            y -= 14;
+        }
+        if (marcaDeAguaPazYSalvo) {
+            ColumnText.showTextAligned(cb, Element.ALIGN_CENTER,
+                    new Phrase("DOCUMENTO DE PRUEBA – generado por un prototipo con datos ficticios; no reemplaza el documento oficial.",
+                            fuente(7.5f, Font.BOLD, ROJO)), pagina.getWidth() / 2, 18, 0);
+        }
+    }
+
+    private static String nombreDocumento(String tipo) {
+        if (tipo == null) {
+            return "cédula de ciudadanía";
+        }
+        return switch (tipo) {
+            case "CE" -> "cédula de extranjería";
+            case "PAS" -> "pasaporte";
+            case "NIT" -> "NIT";
+            default -> "cédula de ciudadanía";
+        };
+    }
+
+    private Image imagenRecurso(String ruta) {
+        try (java.io.InputStream in = getClass().getResourceAsStream(ruta)) {
+            return in == null ? null : Image.getInstance(in.readAllBytes());
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static Image imagenArchivo(String ruta) {
+        try {
+            java.nio.file.Path p = java.nio.file.Path.of(ruta);
+            return java.nio.file.Files.isRegularFile(p) ? Image.getInstance(java.nio.file.Files.readAllBytes(p)) : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static void agregarImagen(PdfContentByte cb, Image img) {
+        try {
+            cb.addImage(img);
+        } catch (Exception e) {
+            // si la imagen no se puede dibujar, el documento sale sin ella
+        }
+    }
+
+    private static Font serif(float tamano, int estilo) {
+        return new Font(Font.TIMES_ROMAN, tamano, estilo, Color.BLACK);
     }
 
     // ================================================================== comprobante de pago

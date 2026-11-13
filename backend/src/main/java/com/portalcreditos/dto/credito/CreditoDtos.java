@@ -80,7 +80,23 @@ public final class CreditoDtos {
             BigDecimal totalPagado,
             BigDecimal totalInteresesPlan,
             BigDecimal totalPagarPlan,
-            VehiculoInfo vehiculo
+            VehiculoInfo vehiculo,
+            CodeudorInfo codeudor,
+            String asesor,
+            BigDecimal cuotaOficial,
+            BigDecimal seguroVidaCuota,
+            BigDecimal fogadeCuota
+    ) {
+    }
+
+    /** Codeudor (fiador) del credito. */
+    public record CodeudorInfo(
+            String tipoDocumento,
+            String numeroDocumento,
+            String nombre,
+            String telefono,
+            String correo,
+            String direccion
     ) {
     }
 
@@ -90,6 +106,8 @@ public final class CreditoDtos {
             LocalDate fechaVencimiento,
             BigDecimal valorCapital,
             BigDecimal valorInteres,
+            BigDecimal valorSeguroVida,
+            BigDecimal valorFogade,
             BigDecimal valorCuota,
             BigDecimal saldoCapitalFinal,
             BigDecimal valorPagado,

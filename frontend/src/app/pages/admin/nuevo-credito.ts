@@ -2,10 +2,11 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { SUCURSALES } from '../../core/sucursales';
 import { debounceTime, filter, map, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { CATALOGO_YAMAHA, ReferenciaMoto } from '../../core/catalogo-motos';
-import { ClaseVehiculo, ClienteInfo, CredencialesTemporales, CreditoResumen, PlanAmortizacion, TipoDocumento } from '../../core/models';
+import { ClaseVehiculo, ClienteInfo, CodeudorInfo, CredencialesTemporales, CreditoResumen, PlanAmortizacion, TipoDocumento } from '../../core/models';
 import { hoyIso, mensajeError } from '../../core/utilidades';
 import { Encabezado } from '../../shared/componentes';
 import { Icono } from '../../shared/icono';
@@ -155,7 +156,50 @@ import { FechaPipe, MonedaPipe, NumeroPipe } from '../../shared/pipes';
                 @for (c of cortes(); track c) { <option [value]="c">{{ c | fecha }}</option> }
               </select>
               <span class="ayuda">Fechas de corte de Rentar: día 5 y día 20 de cada mes.</span></div>
+            <div class="campo" [class.invalido]="errorOficial()"><label for="cof">Cuota oficial (cotizador)</label>
+              <input id="cof" type="number" min="0" step="1" formControlName="cuotaOficial" placeholder="Ej.: 1053000">
+              @if (errorOficial()) { <span class="error activo">Debe ser mayor o igual a la cuota financiera ({{ plan()?.valorCuota | moneda }}).</span> }
+              @else { <span class="ayuda">La diferencia con la cuota financiera se divide en 2: seguro de vida y FOGADE.</span> }</div>
+            <div class="campo"><label for="su">Sucursal</label>
+              <select id="su" formControlName="sucursal">
+                @for (s of sucursales; track s.codigo) { <option [value]="s.codigo">{{ s.codigo }} · {{ s.nombre }}</option> }
+              </select></div>
+            <div class="campo"><label for="as">Asesor de ventas (opcional)</label><input id="as" formControlName="asesor" maxlength="100"></div>
           </div>
+          @if (seguros(); as sg) {
+            <div class="desglose seguros aparecer">
+              <div><span>Cuota financiera</span><strong>{{ sg.financiera | moneda }}</strong></div>
+              <div><span>Seguro de vida</span><strong>{{ sg.vida | moneda }}</strong></div>
+              <div><span>FOGADE</span><strong>{{ sg.fogade | moneda }}</strong></div>
+              <div><span>Cuota oficial</span><strong class="primario">{{ sg.total | moneda }}</strong></div>
+            </div>
+          }
+        </section>
+
+        <section class="tarjeta">
+          <h2><span class="paso">4</span>Codeudor (fiador)</h2>
+          <label class="check-adicional">
+            <input type="checkbox" [checked]="conCodeudor()" (change)="conCodeudor.set($any($event.target).checked)">
+            <span>Este crédito tiene codeudor (máximo uno)</span>
+          </label>
+          @if (conCodeudor()) {
+            <div class="rejilla-form aparecer codeudor">
+              <div class="campo"><label for="cd-td">Tipo de documento</label>
+                <select id="cd-td" [ngModelOptions]="{ standalone: true }" [(ngModel)]="cod.tipoDocumento">
+                  @for (t of tiposDoc; track t) { <option [value]="t">{{ t }}</option> }</select></div>
+              <div class="campo"><label for="cd-nd">Número de documento</label>
+                <div class="con-boton">
+                  <input id="cd-nd" inputmode="numeric" [ngModelOptions]="{ standalone: true }" [(ngModel)]="cod.numeroDocumento" (blur)="buscarCodeudor()">
+                  <button type="button" class="btn btn-secundario" aria-label="Buscar codeudor" (click)="buscarCodeudor()"><app-icono nombre="search" [tamano]="18" /></button>
+                </div>
+                @if (codeudorEncontrado(); as ce) { <span class="ayuda ok">Ya registrado: {{ ce.nombre }}. Se usarán sus datos.</span> }</div>
+              <div class="campo"><label for="cd-no">Nombres</label><input id="cd-no" [ngModelOptions]="{ standalone: true }" [(ngModel)]="cod.nombres"></div>
+              <div class="campo"><label for="cd-ap">Apellidos</label><input id="cd-ap" [ngModelOptions]="{ standalone: true }" [(ngModel)]="cod.apellidos"></div>
+              <div class="campo"><label for="cd-te">Teléfono</label><input id="cd-te" inputmode="tel" [ngModelOptions]="{ standalone: true }" [(ngModel)]="cod.telefono"></div>
+              <div class="campo"><label for="cd-co">Correo (opcional)</label><input id="cd-co" type="email" [ngModelOptions]="{ standalone: true }" [(ngModel)]="cod.correo"></div>
+              <div class="campo ancho"><label for="cd-di">Dirección (opcional)</label><input id="cd-di" [ngModelOptions]="{ standalone: true }" [(ngModel)]="cod.direccion"></div>
+            </div>
+          }
         </section>
       </div>
 
@@ -165,7 +209,7 @@ import { FechaPipe, MonedaPipe, NumeroPipe } from '../../shared/pipes';
           <strong class="valor-grande">{{ financiado() | moneda }}</strong>
           @if (plan(); as p) {
             <div class="datos">
-              <div><span>Cuota mensual</span><strong class="primario">{{ p.valorCuota | moneda }}</strong></div>
+              <div><span>Cuota mensual</span><strong class="primario">{{ (seguros()?.total ?? p.valorCuota) | moneda }}</strong></div>
               <div><span>Total intereses</span><strong>{{ p.totalIntereses | moneda }}</strong></div>
               <div><span>Total a pagar</span><strong>{{ p.totalPagar | moneda }}</strong></div>
               <div><span>Cuotas</span><strong>{{ p.filas.length }}</strong></div>
@@ -174,11 +218,12 @@ import { FechaPipe, MonedaPipe, NumeroPipe } from '../../shared/pipes';
               <summary>Ver plan de amortización</summary>
               <div class="tabla-caja mini">
                 <table class="tabla">
-                  <thead><tr><th>#</th><th>Fecha</th><th class="num">Capital</th><th class="num">Interés</th><th class="num">Saldo</th></tr></thead>
+                  <thead><tr><th>#</th><th>Fecha</th><th class="num">Capital</th><th class="num">Interés</th><th class="num">Seguros</th><th class="num">Total</th><th class="num">Saldo</th></tr></thead>
                   <tbody>
                     @for (f of p.filas; track f.numeroCuota) {
                       <tr><td>{{ f.numeroCuota }}</td><td>{{ f.fechaVencimiento | fecha }}</td><td class="num">{{ f.valorCapital | moneda }}</td>
-                        <td class="num">{{ f.valorInteres | moneda }}</td><td class="num">{{ f.saldoCapitalFinal | moneda }}</td></tr>
+                        <td class="num">{{ f.valorInteres | moneda }}</td><td class="num">{{ (seguros()?.vida ?? 0) + (seguros()?.fogade ?? 0) | moneda }}</td>
+                        <td class="num">{{ f.valorCuota + (seguros()?.vida ?? 0) + (seguros()?.fogade ?? 0) | moneda }}</td><td class="num">{{ f.saldoCapitalFinal | moneda }}</td></tr>
                     }
                   </tbody>
                 </table>
@@ -211,6 +256,13 @@ import { FechaPipe, MonedaPipe, NumeroPipe } from '../../shared/pipes';
     .aviso-existente a, .existente a { color: inherit; font-weight: 700; }
     .check-adicional { display: flex; gap: 8px; align-items: flex-start; margin-top: 8px; cursor: pointer; color: var(--texto); }
     .check-adicional input { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--primario); flex-shrink: 0; }
+    .desglose.seguros { margin-top: 12px; grid-template-columns: repeat(4, 1fr); }
+    @media (max-width: 600px) { .desglose.seguros { grid-template-columns: 1fr 1fr; } }
+    .codeudor { margin-top: 12px; }
+    .con-boton { display: flex; gap: 6px; }
+    .con-boton input { flex: 1; min-width: 0; }
+    .ancho { grid-column: 1 / -1; }
+    .ayuda.ok { color: var(--ok); font-weight: 700; }
     .existente { display: flex; gap: 10px; align-items: flex-start; margin-top: 10px; }
     .acciones-existente { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
     .acciones-existente a { color: var(--texto); }
@@ -280,6 +332,9 @@ export class NuevoCredito {
     plazoMeses: [36, [Validators.required, Validators.min(6), Validators.max(120)]],
     fechaDesembolso: [hoyIso(), Validators.required],
     fechaPrimeraCuota: [''],
+    cuotaOficial: [null as number | null],
+    asesor: [''],
+    sucursal: ['01'],
   });
 
   private readonly valores = toSignal(this.form.valueChanges, { initialValue: this.form.value });
@@ -307,6 +362,26 @@ export class NuevoCredito {
     if (!cliente || !cartera) return null;
     return cartera.filter((c) => c.documentoCliente === cliente.numeroDocumento && c.estado !== 'CANCELADO');
   });
+  /** Seguro de vida y FOGADE: (cuota oficial - cuota financiera) / 2 cada uno. */
+  protected readonly seguros = computed(() => {
+    const oficial = Number(this.valores().cuotaOficial) || 0;
+    const p = this.plan();
+    if (!p || oficial <= 0 || oficial < p.valorCuota) return null;
+    const diferencia = Math.round(oficial - p.valorCuota);
+    const fogade = Math.floor(diferencia / 2);
+    return { financiera: p.valorCuota, vida: diferencia - fogade, fogade, total: p.valorCuota + diferencia };
+  });
+  protected readonly errorOficial = computed(() => {
+    const oficial = Number(this.valores().cuotaOficial) || 0;
+    const p = this.plan();
+    return !!p && oficial > 0 && oficial < p.valorCuota;
+  });
+
+  protected readonly sucursales = SUCURSALES;
+  protected readonly conCodeudor = signal(false);
+  protected readonly codeudorEncontrado = signal<CodeudorInfo | null>(null);
+  protected cod = { tipoDocumento: 'CC' as TipoDocumento, numeroDocumento: '', nombres: '', apellidos: '', telefono: '', correo: '', direccion: '' };
+
   protected readonly faltaConfirmar = computed(() => !!this.activosDelCliente()?.length && !this.adicional());
 
   /** Fecha del sistema (la del servidor, en tiempo real). */
@@ -390,6 +465,24 @@ export class NuevoCredito {
     });
   }
 
+  /** Si el codeudor ya existe, trae sus datos para no escribirlos dos veces. */
+  protected buscarCodeudor(): void {
+    const doc = this.cod.numeroDocumento.trim();
+    this.codeudorEncontrado.set(null);
+    if (doc.length < 5) return;
+    this.api.codeudor(doc).subscribe({
+      next: (c) => {
+        this.codeudorEncontrado.set(c);
+        const partes = c.nombre.split(' ');
+        const mitad = Math.ceil(partes.length / 2);
+        this.cod = { ...this.cod, nombres: this.cod.nombres || partes.slice(0, mitad).join(' '),
+          apellidos: this.cod.apellidos || partes.slice(mitad).join(' '), telefono: this.cod.telefono || (c.telefono ?? ''),
+          correo: this.cod.correo || (c.correo ?? ''), direccion: this.cod.direccion || (c.direccion ?? '') };
+      },
+      error: () => this.codeudorEncontrado.set(null),
+    });
+  }
+
   /** El documento ya existe: en lugar de duplicarlo se selecciona el cliente registrado. */
   protected usarExistente(c: ClienteInfo): void {
     this.form.patchValue({ clienteId: c.id });
@@ -408,6 +501,15 @@ export class NuevoCredito {
       this.notificaciones.error('Revisa los campos marcados.');
       return;
     }
+    if (this.errorOficial()) {
+      this.notificaciones.error('La cuota oficial no puede ser menor que la cuota financiera.');
+      return;
+    }
+    if (this.conCodeudor() && (!this.cod.numeroDocumento.trim() || (!this.codeudorEncontrado()
+        && (!this.cod.nombres.trim() || !this.cod.apellidos.trim() || !this.cod.telefono.trim())))) {
+      this.notificaciones.error('Complete el documento, nombres, apellidos y teléfono del codeudor.');
+      return;
+    }
     if (this.faltaConfirmar()) {
       this.notificaciones.error('El cliente ya tiene un crédito activo. Confirme que es un crédito nuevo por otra moto o modifique el existente.');
       return;
@@ -420,6 +522,14 @@ export class NuevoCredito {
       cuotaInicial: Number(v.cuotaInicial), tasaInteresMensual: Number(v.tasaInteresMensual), plazoMeses: Number(v.plazoMeses),
       fechaDesembolso: v.fechaDesembolso!, fechaPrimeraCuota: v.fechaPrimeraCuota || null,
       creditoAdicional: this.adicional(),
+      cuotaOficial: Number(v.cuotaOficial) > 0 ? Number(v.cuotaOficial) : null,
+      asesor: v.asesor?.trim() || null,
+      sucursal: v.sucursal || '01',
+      codeudor: this.conCodeudor() ? {
+        tipoDocumento: this.cod.tipoDocumento, numeroDocumento: this.cod.numeroDocumento.trim(),
+        nombres: this.cod.nombres.trim() || null, apellidos: this.cod.apellidos.trim() || null,
+        telefono: this.cod.telefono.trim() || null, correo: this.cod.correo.trim() || null, direccion: this.cod.direccion.trim() || null,
+      } : null,
     }).subscribe({
       next: (d) => {
         this.notificaciones.exito(`Crédito ${d.resumen.numeroCredito} registrado.`);

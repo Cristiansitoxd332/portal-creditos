@@ -63,10 +63,9 @@ public class SituacionCreditoService {
         for (Cuota c : cuotas) {
             BigDecimal pagado = c.getValorPagado();
             totalPagado = totalPagado.add(pagado);
-            // Cada pago cubre primero el interes de la cuota y luego el capital
-            BigDecimal interesCubierto = pagado.min(c.getValorInteres());
-            interesesPagados = interesesPagados.add(interesCubierto);
-            capitalPagado = capitalPagado.add(pagado.subtract(interesCubierto).min(c.getValorCapital()));
+            // Cada pago cubre primero seguros (vida y FOGADE), luego el interes de la cuota y por ultimo el capital
+            interesesPagados = interesesPagados.add(c.getInteresCubierto());
+            capitalPagado = capitalPagado.add(c.getCapitalCubierto());
 
             if (c.getEstado() == EstadoCuota.PAGADA) {
                 pagadas++;
