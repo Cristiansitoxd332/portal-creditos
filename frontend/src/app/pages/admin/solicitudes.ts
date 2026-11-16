@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { EstadoSolicitud, SolicitudInfo } from '../../core/models';
-import { mensajeError } from '../../core/utilidades';
+import { guardarArchivo, mensajeError } from '../../core/utilidades';
 import { Cargando, Encabezado } from '../../shared/componentes';
 import { Icono } from '../../shared/icono';
 import { NotificacionService } from '../../shared/notificaciones';
@@ -51,6 +51,8 @@ const CLASE_ESTADO: Record<EstadoSolicitud, string> = {
               }
             </dl>
             @if (s.observacionCliente) { <p class="cita">“{{ s.observacionCliente }}”</p> }
+            <button type="button" class="btn btn-secundario btn-pequeno formato" (click)="formato(s)">
+              <app-icono nombre="download" [tamano]="16" />Formato de solicitud (PDF)</button>
             @if (s.respuestaAdmin) { <p class="respuesta"><app-icono nombre="chat" [tamano]="16" />{{ s.respuestaAdmin }}</p> }
 
             @if (s.estado === 'RADICADA' || s.estado === 'EN_REVISION') {
@@ -101,6 +103,7 @@ const CLASE_ESTADO: Record<EstadoSolicitud, string> = {
     .respuesta { margin: 0; font-size: 13px; display: flex; gap: 8px; color: var(--texto-2); background: var(--superficie-2); padding: 10px; border-radius: 10px; }
     .responder { display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--borde); padding-top: 12px; }
     .acciones { display: flex; justify-content: flex-end; gap: 8px; }
+    .formato { align-self: flex-start; }
     .vacio { display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--texto-3); padding: 36px; grid-column: 1 / -1; }
     .vacio p { margin: 0; }
   `],
@@ -131,6 +134,13 @@ export class Solicitudes {
     this.api.solicitudes(this.filtro()).subscribe({
       next: (s) => this.solicitudes.set(s),
       error: (e) => this.error.set(mensajeError(e)),
+    });
+  }
+
+  protected formato(s: SolicitudInfo): void {
+    this.api.formatoLevantamientoAdminPdf(s.creditoId).subscribe({
+      next: (b) => guardarArchivo(b, `solicitud-levantamiento-${s.numeroCredito}.pdf`),
+      error: (e) => this.notificaciones.error(mensajeError(e)),
     });
   }
 

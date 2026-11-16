@@ -38,9 +38,12 @@ public class AdminAbonoController {
     private final UsuarioActual usuario;
     private final PagoService pagos;
     private final DocumentoPdfService pdf;
+    private final com.portalcreditos.service.FormatoLevantamientoService formato;
 
     public AdminAbonoController(AbonoService abonos, CodeudorRepository codeudores, UsuarioActual usuario,
-                                PagoService pagos, DocumentoPdfService pdf) {
+                                PagoService pagos, DocumentoPdfService pdf,
+                                com.portalcreditos.service.FormatoLevantamientoService formato) {
+        this.formato = formato;
         this.pagos = pagos;
         this.pdf = pdf;
         this.abonos = abonos;
@@ -71,6 +74,12 @@ public class AdminAbonoController {
     public ResponseEntity<byte[]> comprobantePdf(@PathVariable Long creditoId, @PathVariable Long pagoId) {
         Comprobante c = pagos.comprobante(creditoId, pagoId);
         return Descargas.pdf(pdf.comprobantePago(c), "comprobante-" + c.referencia() + ".pdf");
+    }
+
+    /** Formato oficial de solicitud de levantamiento de prenda de un credito cancelado (prellenado). */
+    @GetMapping("/levantamiento/creditos/{creditoId}/formato")
+    public ResponseEntity<byte[]> formatoLevantamiento(@PathVariable Long creditoId) {
+        return Descargas.pdf(formato.delAdmin(creditoId), "solicitud-levantamiento-prenda-" + creditoId + ".pdf");
     }
 
     /** Historial por identificacion (creditos como deudor y como codeudor). */

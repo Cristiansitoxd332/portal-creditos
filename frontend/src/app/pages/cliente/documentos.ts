@@ -43,6 +43,18 @@ const MEDIOS: Record<MedioPagoTramite, { texto: string; detalle: string; icono: 
             </section>
           }
 
+          @if (paz()!.disponible) {
+            <section class="tarjeta formato aparecer">
+              <h2>Formato de solicitud de levantamiento</h2>
+              <p>Es el formato oficial de Rentar, ya diligenciado con sus datos y los de su moto. Imprímalo, fírmelo,
+                haga el <b>reconocimiento de firma y de documento</b> en notaría y envíelo con los anexos autenticados a
+                <b>rentargarantiasmobiliarias&#64;gmail.com</b>.</p>
+              <button type="button" class="btn btn-secundario btn-bloque" (click)="descargarFormato()" [disabled]="descargandoFormato()">
+                <app-icono nombre="download" [tamano]="18" />{{ descargandoFormato() ? 'Generando…' : 'Descargar formato (PDF)' }}
+              </button>
+            </section>
+          }
+
           <section class="tarjeta">
             <h2>Requisitos para el levantamiento</h2>
             <ol class="requisitos">
@@ -155,6 +167,7 @@ const MEDIOS: Record<MedioPagoTramite, { texto: string; detalle: string; icono: 
     .listo small { font-size: 12.5px; opacity: 0.95; }
     .pendiente { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; color: var(--texto-3); }
     .pendiente h2 { color: var(--texto); }
+    .formato p { font-size: 13.5px; color: var(--texto-2); margin: 0 0 12px; line-height: 1.5; }
     .requisitos { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
     .requisitos li { display: flex; gap: 12px; }
     .requisitos p { color: var(--texto-3); font-size: 12.5px; margin: 2px 0 0; }
@@ -221,6 +234,19 @@ export class Documentos {
     forkJoin({ paz: this.api.estadoPazYSalvo(id), lev: this.api.estadoLevantamiento(id), req: this.api.requisitos() }).subscribe({
       next: (r) => { this.paz.set(r.paz); this.lev.set(r.lev); this.requisitos.set(r.req); },
       error: (e) => this.error.set(mensajeError(e)),
+    });
+  }
+
+  protected readonly descargandoFormato = signal(false);
+
+  protected descargarFormato(): void {
+    this.descargandoFormato.set(true);
+    this.api.formatoLevantamientoPdf(Number(this.id())).subscribe({
+      next: (b) => {
+        guardarArchivo(b, `solicitud-levantamiento-${this.lev()?.numeroCredito ?? this.id()}.pdf`);
+        this.descargandoFormato.set(false);
+      },
+      error: (e) => { this.notificaciones.error(mensajeError(e)); this.descargandoFormato.set(false); },
     });
   }
 

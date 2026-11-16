@@ -123,6 +123,12 @@ export class ApiService {
   registrarPagoAdmin(id: number, r: PagoRequest): Observable<Comprobante> {
     return this.http.post<Comprobante>(`${API_URL}/admin/creditos/${id}/pagos`, r);
   }
+  formatoLevantamientoPdf(id: number): Observable<Blob> {
+    return this.http.get(`${API_URL}/cliente/creditos/${id}/levantamiento/formato`, { responseType: 'blob' });
+  }
+  formatoLevantamientoAdminPdf(creditoId: number): Observable<Blob> {
+    return this.http.get(`${API_URL}/admin/levantamiento/creditos/${creditoId}/formato`, { responseType: 'blob' });
+  }
   pazYSalvoAdminPdf(id: number): Observable<Blob> {
     return this.http.get(`${API_URL}/admin/creditos/${id}/paz-y-salvo`, { responseType: 'blob' });
   }

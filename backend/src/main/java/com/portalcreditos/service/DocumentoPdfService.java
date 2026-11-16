@@ -63,6 +63,10 @@ public class DocumentoPdfService {
     private final String pie;
     private final boolean marcaDeAguaPazYSalvo;
     private final boolean qrPazYSalvo;
+    private final String bancoTramite;
+    private final String cuentaTramite;
+    private final String correoGarantias;
+    private final String pieLevantamiento;
 
     public DocumentoPdfService(QrService qrService,
                                @Value("${app.documentos.entidad}") String entidad,
@@ -73,7 +77,15 @@ public class DocumentoPdfService {
                                @Value("${app.documentos.firma:firma/firma.png}") String rutaFirma,
                                @Value("${app.documentos.pie:Carrera 5 n 15-01 oficina 201}") String pie,
                                @Value("${app.documentos.paz-y-salvo.marca-de-agua:false}") boolean marcaDeAguaPazYSalvo,
-                               @Value("${app.documentos.paz-y-salvo.qr:true}") boolean qrPazYSalvo) {
+                               @Value("${app.documentos.paz-y-salvo.qr:true}") boolean qrPazYSalvo,
+                               @Value("${app.levantamiento.formato.banco:Bancolombia}") String bancoTramite,
+                               @Value("${app.levantamiento.formato.cuenta:cuenta de ahorros # 45548922341 a nombre de Rentar Inversiones ltda nit 813.007.547-8.}") String cuentaTramite,
+                               @Value("${app.levantamiento.formato.correo:rentargarantiasmobiliarias@gmail.com}") String correoGarantias,
+                               @Value("${app.levantamiento.formato.pie:Cra 5 # 15-01 Tel 3108898007 rentargarantiasmobiliarias@gmail.com}") String pieLevantamiento) {
+        this.bancoTramite = bancoTramite;
+        this.cuentaTramite = cuentaTramite;
+        this.correoGarantias = correoGarantias;
+        this.pieLevantamiento = pieLevantamiento;
         this.marcaDeAguaPazYSalvo = marcaDeAguaPazYSalvo;
         this.qrPazYSalvo = qrPazYSalvo;
         this.qrService = qrService;
@@ -198,6 +210,157 @@ public class DocumentoPdfService {
         pieRentar(cb, pagina);
         doc.close();
         return salida.toByteArray();
+    }
+
+    /** Datos para el formato oficial de solicitud de levantamiento de prenda. */
+    public record DatosSolicitudLevantamiento(
+            java.time.LocalDate fecha,
+            String ciudad,
+            String titular,
+            String tipoDocumento,
+            String numeroDocumento,
+            String marca,
+            String modelo,
+            String color,
+            String numeroChasis,
+            String numeroMotor,
+            String placa,
+            String celular,
+            String direccion,
+            String correo,
+            String numeroCredito,
+            String pagoTramitePortal,
+            String cuentaRecaudo
+    ) {
+    }
+
+    /**
+     * Formato "Solicitud de levantamiento de prenda" de Rentar Inversiones, prellenado con los datos del
+     * titular y de la moto. Los datos que no estan en el sistema quedan con linea para llenarlos a mano.
+     */
+    public byte[] solicitudLevantamiento(DatosSolicitudLevantamiento d) {
+        ByteArrayOutputStream salida = new ByteArrayOutputStream();
+        Document doc = new Document(PageSize.LETTER, 80, 80, 130, 80);
+        PdfWriter writer = PdfWriter.getInstance(doc, salida);
+        doc.addTitle("Solicitud de levantamiento de prenda " + d.numeroCredito());
+        doc.addCreator("Portal de creditos Rentar");
+        doc.open();
+        PdfContentByte cb = writer.getDirectContent();
+        Rectangle pagina = doc.getPageSize();
+
+        Image logo = imagenRecurso("/documentos/logo-rentar.png");
+        if (logo != null) {
+            logo.scaleToFit(70, 80);
+            logo.setAbsolutePosition(80, pagina.getHeight() - 30 - logo.getScaledHeight());
+            agregarImagen(cb, logo);
+        }
+        float centro = pagina.getWidth() / 2 + 30;
+        ColumnText.showTextAligned(cb, Element.ALIGN_CENTER, new Phrase(razonSocial, serif(14, Font.BOLD)), centro, pagina.getHeight() - 62, 0);
+        ColumnText.showTextAligned(cb, Element.ALIGN_CENTER, new Phrase("NIT " + nit, serif(14, Font.BOLD)), centro, pagina.getHeight() - 79, 0);
+
+        Font normal = fuente(10.5f, Font.NORMAL, Color.BLACK);
+        Font negrita = fuente(10.5f, Font.BOLD, Color.BLACK);
+        String ciudad = vacio(d.ciudad()) ? ciudadFirma : d.ciudad();
+
+        Paragraph fecha = new Paragraph();
+        fecha.add(new Chunk(ciudad + ", " + d.fecha().format(MES) + " " + d.fecha().getDayOfMonth() + " de " + d.fecha().getYear(), normal));
+        fecha.setSpacingAfter(26);
+        doc.add(fecha);
+
+        Paragraph yo = new Paragraph();
+        yo.setAlignment(Element.ALIGN_JUSTIFIED);
+        yo.setLeading(15);
+        yo.add(new Chunk("Yo, ", normal));
+        yo.add(new Chunk(d.titular().toUpperCase(CO), negrita));
+        yo.add(new Chunk(", mayor de edad, con " + nombreDocumento(d.tipoDocumento()) + " No. ", normal));
+        yo.add(new Chunk(d.numeroDocumento(), negrita));
+        yo.add(new Chunk(" vecino de ", normal));
+        yo.add(new Chunk(ciudad, negrita));
+        yo.add(new Chunk(", identificado como aparece al pie de mi firma, obrando en mi calidad de Propietario Inscrito de la "
+                + "motocicleta que describo a continuación, solicito a ustedes se sirvan cancelar la Prenda sin Tenencia del "
+                + "Acreedor (Rentar Inversiones ltda) que se encuentra registrada a su favor.", normal));
+        yo.setSpacingAfter(12);
+        doc.add(yo);
+
+        PdfPTable moto = new PdfPTable(new float[]{1.3f, 3f});
+        moto.setWidthPercentage(62);
+        moto.setHorizontalAlignment(Element.ALIGN_LEFT);
+        String[][] filas = {
+                {"MOTO:", vacio(d.marca()) ? "YAMAHA" : d.marca().toUpperCase(CO)},
+                {"MODELO:", d.modelo()}, {"COLOR:", d.color()}, {"NÚMERO CHASIS:", d.numeroChasis()},
+                {"NÚMERO MOTOR:", d.numeroMotor()}, {"PLACA:", d.placa()},
+        };
+        for (String[] f : filas) {
+            PdfPCell etiqueta = new PdfPCell(new Phrase(f[0], normal));
+            etiqueta.setBorder(Rectangle.NO_BORDER);
+            etiqueta.setPaddingBottom(2);
+            moto.addCell(etiqueta);
+            PdfPCell valor = new PdfPCell(new Phrase(vacio(f[1]) ? " " : f[1], negrita));
+            valor.setBorder(f[0].equals("MOTO:") ? Rectangle.NO_BORDER : Rectangle.BOTTOM);
+            valor.setPaddingBottom(2);
+            moto.addCell(valor);
+        }
+        moto.setSpacingAfter(12);
+        doc.add(moto);
+
+        doc.add(parrafo("Lo anterior por cuanto me encuentro a Paz y Salvo con Ustedes.", normal, Element.ALIGN_LEFT, 12));
+        doc.add(parrafo("Anexo:", normal, Element.ALIGN_LEFT, 6));
+        com.lowagie.text.List anexos = new com.lowagie.text.List(false, 12);
+        anexos.setListSymbol(new Chunk("\u2022", normal));
+        anexos.add(new com.lowagie.text.ListItem("Fotocopia de Mi cédula de ciudadanía 100%", normal));
+        anexos.add(new com.lowagie.text.ListItem("Fotocopia de la tarjeta de propiedad de la motocicleta 100%\n"
+                + "en caso de que no cuentes con este requisito, deberás enviarnos el denuncio por pérdida de documento, con las "
+                + "especificaciones de la motocicleta o en su defecto el certificado de Libertad y Tradición de la motocicleta", normal));
+        Phrase consignacion = new Phrase();
+        consignacion.add(new Chunk("Soporte de la consignación por valor de $ 30.000= esta se debe realizar por ", normal));
+        consignacion.add(new Chunk(bancoTramite, negrita));
+        consignacion.add(new Chunk(" " + cuentaTramite, normal));
+        anexos.add(new com.lowagie.text.ListItem(consignacion));
+        anexos.add(new com.lowagie.text.ListItem("También puede pagar el trámite desde el portal (PSE, Efecty o consignación) en la cuenta de recaudo N.° "
+                + d.cuentaRecaudo() + ", exclusiva para levantamientos.", normal));
+        if (!vacio(d.pagoTramitePortal())) {
+            anexos.add(new com.lowagie.text.ListItem(d.pagoTramitePortal(), negrita));
+        }
+        doc.add(anexos);
+
+        doc.add(parrafo(" ", normal, Element.ALIGN_LEFT, 22));
+        doc.add(parrafo("_______________________", normal, Element.ALIGN_LEFT, 0));
+        doc.add(parrafo("(Firma y c.c. del propietario)", normal, Element.ALIGN_LEFT, 14));
+
+        doc.add(parrafo("Teléfono: ______________________   Celular: " + linea(d.celular(), 18), normal, Element.ALIGN_LEFT, 2));
+        doc.add(parrafo("Dirección: " + linea(d.direccion(), 32) + "   Ciudad: " + linea(d.ciudad(), 16), normal, Element.ALIGN_LEFT, 2));
+        doc.add(parrafo("Departamento: __________________", normal, Element.ALIGN_LEFT, 2));
+        doc.add(parrafo("E-Mail: " + linea(d.correo(), 40), normal, Element.ALIGN_LEFT, 16));
+
+        doc.add(parrafo("INSTRUCCIONES:", negrita, Element.ALIGN_LEFT, 4));
+        com.lowagie.text.List instrucciones = new com.lowagie.text.List(true, 14);
+        instrucciones.add(new com.lowagie.text.ListItem("La presente comunicación debe traer la diligencia Notarial denominada "
+                + "\u201cRECONOCIMIENTO DE FIRMA Y DE DOCUMENTO\u201d", normal));
+        instrucciones.add(new com.lowagie.text.ListItem("Todos los demás documentos anexos deben aportarse autenticados.", normal));
+        instrucciones.add(new com.lowagie.text.ListItem("Sin los documentos 1. y 2. diligenciados, no se expide el Levantamiento de Prenda.", normal));
+        instrucciones.add(new com.lowagie.text.ListItem("Los documentos anexos deben aportarse de carácter obligatorio", normal));
+        instrucciones.add(new com.lowagie.text.ListItem("Todos los documentos deberán ser enviados al correo de " + correoGarantias, normal));
+        doc.add(instrucciones);
+
+        // Pie con linea
+        cb.saveState();
+        cb.setColorFill(Color.BLACK);
+        cb.rectangle(80, 50, pagina.getWidth() - 160, 0.7f);
+        cb.fill();
+        cb.restoreState();
+        ColumnText.showTextAligned(cb, Element.ALIGN_CENTER, new Phrase(pieLevantamiento, fuente(9, Font.NORMAL, Color.BLACK)),
+                pagina.getWidth() / 2, 38, 0);
+        doc.close();
+        return salida.toByteArray();
+    }
+
+    private static boolean vacio(String s) {
+        return s == null || s.isBlank();
+    }
+
+    /** El valor si existe; si no, una linea para llenar a mano. */
+    private static String linea(String valor, int largo) {
+        return vacio(valor) ? "_".repeat(largo) : valor;
     }
 
     /** Pie con los datos de la oficina (como el formato fisico) y la advertencia de prototipo. */

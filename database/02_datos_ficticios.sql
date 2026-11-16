@@ -71,12 +71,12 @@ INSERT INTO cliente (id, tipo_documento, numero_documento, nombres, apellidos, c
 -- USUARIOS (contrasenas cifradas con BCrypt)
 -- ---------------------------------------------------------------------
 INSERT INTO usuario (id, username, password_hash, rol, cliente_id, activo, debe_cambiar_password) VALUES
-(1, 'admin', '$2a$10$JpoDBSZtkeiEMOfqP0IqK.V5vFd8FEEN2SgQzOxFsCzdaJO07wtPi', 'ADMIN', NULL, TRUE, FALSE),
-(2, '1075200101', '$2a$10$tPav.Smwafh4hIDNX7GbI.GuOooesfe.isYhHyAsI9cyuwKCqg6v.', 'CLIENTE', 1, TRUE, FALSE),
-(3, '1075200202', '$2a$10$/eduh6m7kKRUmH19ZwShEObOpiZv7KJV/YWhwJKuJdVb/Tnxq0MAi', 'CLIENTE', 2, TRUE, FALSE),
-(4, '1075200303', '$2a$10$U2lok8fv.I9c6k4qTESezeHA4VMya1fGxegHz3kpQMM5ZYWYZgIkS', 'CLIENTE', 3, TRUE, FALSE),
-(5, '980045600', '$2a$10$QMVsG.E4irAtj0DlARE7Q.fIIHA4Lc82qvwIWFi4W1RnZCWZlsSAS', 'CLIENTE', 4, TRUE, TRUE),
-(6, '1075200505', '$2a$10$X.vaPGoRRCaQao9RDVBvJ.qw3d5J6MjJxXpNvrWTOr0ZA525BXcSa', 'CLIENTE', 5, TRUE, FALSE);
+(1, 'admin', '$2a$10$NgnderhiikZBvo1xN0OazuQ5edRXteN.waC4xa9OR.ef2j.2ivmJu', 'ADMIN', NULL, TRUE, FALSE),
+(2, '1075200101', '$2a$10$cppKSn6Mu0eUn0qqW4zmjOjb4N/NA/7u2isDCkejJMmqjsBamJ4I.', 'CLIENTE', 1, TRUE, FALSE),
+(3, '1075200202', '$2a$10$TyeNAIyvWdPoQ/CQB9QXV.bNtM3u44LqwiHJ41QHMbGIQQfWsIq0y', 'CLIENTE', 2, TRUE, FALSE),
+(4, '1075200303', '$2a$10$6zt4MqyT03Cozw4NOsliK.LK8g90iVg7Jqs4h2PzGDw28iKV42vza', 'CLIENTE', 3, TRUE, FALSE),
+(5, '980045600', '$2a$10$pDo/VIIFqzJiejrPBUFAkuutdV95cjN7XET7aYamTa8aUf2ZxbfIa', 'CLIENTE', 4, TRUE, TRUE),
+(6, '1075200505', '$2a$10$sHh3SLN.Hqjzy7TuBgivJujFkVq6CZCvMuuu7mXPtSeHt5jb6a4qO', 'CLIENTE', 5, TRUE, FALSE);
 
 -- ---------------------------------------------------------------------
 -- CODEUDORES (fiadores) - datos ficticios
@@ -448,16 +448,15 @@ INSERT INTO paz_y_salvo (credito_id, codigo_verificacion, fecha_emision) VALUES
 (5, 'PYS-2026-B41E06D8', TIMESTAMP(DATE_ADD(DATE_ADD(@v5, INTERVAL -5 MONTH), INTERVAL 2 DAY), '15:40:00'));
 
 -- ---------------------------------------------------------------------
--- REQUISITOS DE LEVANTAMIENTO DE PRENDA (texto de EJEMPLO, editable desde el panel admin;
--- los requisitos reales los define la empresa)
+-- REQUISITOS DE LEVANTAMIENTO DE PRENDA (segun el formato oficial de Rentar; editables desde el panel admin)
 -- ---------------------------------------------------------------------
 INSERT INTO requisito_levantamiento (titulo, descripcion, orden, activo) VALUES
-('Crédito cancelado en su totalidad', 'El crédito debe tener saldo cero y contar con el paz y salvo emitido por la entidad.', 1, TRUE),
-('Solicitud de levantamiento', 'Radicar la solicitud de levantamiento de prenda a través del portal o de los canales oficiales de atención.', 2, TRUE),
-('Pago del trámite: $30.000', 'El trámite tiene un costo de $30.000, que se paga por PSE, Efecty o consignación únicamente en la cuenta de recaudo N.° 7854, exclusiva para levantamientos (separada de los pagos de cuotas).', 3, TRUE),
-('Documento de identidad del titular', 'Copia legible del documento de identidad del titular del crédito.', 4, TRUE),
-('Licencia de tránsito de la moto', 'Copia de la licencia de tránsito (tarjeta de propiedad) de la moto financiada.', 5, TRUE),
-('Trámite ante el organismo de tránsito', 'Con el documento de levantamiento entregado por la entidad, el titular realiza la inscripción del levantamiento ante el organismo de tránsito donde está matriculada la moto.', 6, TRUE),
+('Crédito cancelado (paz y salvo)', 'El crédito debe estar cancelado en su totalidad. El paz y salvo se descarga desde el portal.', 1, TRUE),
+('Formato de solicitud firmado y autenticado', 'Descargue el formato oficial de solicitud de levantamiento de prenda (ya diligenciado con sus datos), fírmelo y realice en notaría la diligencia “RECONOCIMIENTO DE FIRMA Y DE DOCUMENTO”.', 2, TRUE),
+('Fotocopia de la cédula de ciudadanía al 100%', 'Fotocopia autenticada del documento de identidad del propietario.', 3, TRUE),
+('Fotocopia de la tarjeta de propiedad al 100%', 'Fotocopia autenticada de la tarjeta de propiedad de la motocicleta. Si no la tiene, envíe el denuncio por pérdida del documento con las especificaciones de la moto o el certificado de Libertad y Tradición.', 4, TRUE),
+('Pago del trámite: $30.000', 'Se paga desde el portal por PSE, Efecty o consignación en la cuenta de recaudo N.° 7854, exclusiva para levantamientos (separada de los pagos de cuotas), o por consignación en Bancolombia, cuenta de ahorros N.° 45548922341 a nombre de Rentar Inversiones Ltda., NIT 813.007.547-8. Adjunte el soporte.', 5, TRUE),
+('Envío de documentos', 'Todos los documentos deben enviarse al correo rentargarantiasmobiliarias@gmail.com. Sin el formato firmado con reconocimiento notarial y los anexos autenticados no se expide el levantamiento de prenda.', 6, TRUE),
 ('Vigencia de 30 días', 'El documento de levantamiento tiene una vigencia de 30 días desde su aprobación. Si vence sin realizar el trámite ante tránsito, se debe radicar una renovación y pagar nuevamente el trámite.', 7, TRUE);
 
 -- ---------------------------------------------------------------------

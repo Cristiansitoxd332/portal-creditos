@@ -9,6 +9,7 @@ import com.portalcreditos.dto.simulador.SimuladorDtos.SimulacionRequest;
 import com.portalcreditos.security.UsuarioActual;
 import com.portalcreditos.service.DocumentoPdfService;
 import com.portalcreditos.service.LevantamientoService;
+import com.portalcreditos.service.FormatoLevantamientoService;
 import com.portalcreditos.service.PagoService;
 import com.portalcreditos.service.PazYSalvoService;
 import com.portalcreditos.service.SimuladorAbonoService;
@@ -36,10 +37,12 @@ public class ClienteServiciosController {
     private final SimuladorAbonoService simulador;
     private final LevantamientoService levantamiento;
     private final UsuarioActual usuario;
+    private final FormatoLevantamientoService formato;
 
     public ClienteServiciosController(PazYSalvoService pazYSalvo, PagoService pagos, DocumentoPdfService pdf,
                                       SimuladorAbonoService simulador, LevantamientoService levantamiento,
-                                      UsuarioActual usuario) {
+                                      UsuarioActual usuario, FormatoLevantamientoService formato) {
+        this.formato = formato;
         this.pazYSalvo = pazYSalvo;
         this.pagos = pagos;
         this.pdf = pdf;
@@ -79,6 +82,13 @@ public class ClienteServiciosController {
     @GetMapping("/levantamiento")
     public EstadoLevantamiento estadoLevantamiento(@PathVariable Long creditoId) {
         return levantamiento.estadoDelCliente(usuario.getClienteId(), creditoId);
+    }
+
+    /** Formato oficial de solicitud de levantamiento de prenda, prellenado (solo con el credito cancelado). */
+    @GetMapping("/levantamiento/formato")
+    public ResponseEntity<byte[]> formatoLevantamiento(@PathVariable Long creditoId, HttpServletRequest request) {
+        byte[] archivo = formato.delCliente(usuario.getClienteId(), creditoId, usuario.getUsername(), request.getRemoteAddr());
+        return Descargas.pdf(archivo, "solicitud-levantamiento-prenda-" + creditoId + ".pdf");
     }
 
     /** Radica una solicitud (simulada) de levantamiento de prenda. */
